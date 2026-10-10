@@ -206,5 +206,5 @@ overload and share 96% of transferred load.
 
 `python experiments/run_all.py` re-runs everything. All randomness is seeded.
 The trust rules, forecaster and planner are deterministic given the data
-fingerprint in `data/manifest.json`. 51 unit tests (`pytest`) plus a headless
+fingerprint in `data/manifest.json`. 56 tests (`pytest`) plus a headless
 dashboard check (`node tests/ui_smoke.js`).

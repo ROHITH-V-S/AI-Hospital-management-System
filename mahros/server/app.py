@@ -12,6 +12,7 @@ copy to show exactly where verification breaks.
 from __future__ import annotations
 
 import copy
+from contextlib import asynccontextmanager
 import json
 import re
 from pathlib import Path
@@ -21,12 +22,37 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from ..ledger.chain import AuditLedger
 
+try:   # live mode needs the experiment stack; the hosted evidence pages do not
+    from .live import LiveEngine
+except ImportError as _exc:                       # pragma: no cover
+    _LIVE_IMPORT_ERROR = str(_exc)
+
+    class LiveEngine:                              # type: ignore[no-redef]
+        ready, loading = False, False
+        error = (f"Live mode is not available here ({_LIVE_IMPORT_ERROR}). "
+                 "Run it on a computer with the full install and data.")
+
+        def start_loading(self):
+            pass
+
+        def status(self):
+            return {"ready": False, "loading": False, "error": self.error}
+
 ROOT = Path(__file__).resolve().parents[2]
 UI = ROOT / "results" / "ui"
 STATIC = Path(__file__).resolve().parent / "static"
 SAFE_NAME = re.compile(r"^[A-Za-z0-9_\-]+\.json$")
 
-app = FastAPI(title="MAHROS", docs_url="/api/docs")
+LIVE = LiveEngine()
+
+
+@asynccontextmanager
+async def _lifespan(_app):
+    LIVE.start_loading()          # ~15 s in a background thread; the page shows progress
+    yield
+
+
+app = FastAPI(title="MAHROS", docs_url="/api/docs", lifespan=_lifespan)
 
 
 def _load_entries():
@@ -112,3 +138,55 @@ def ledger_tamper(block: int = 0):
 def ledger_reset():
     LEDGER.reset()
     return ledger_status()
+
+
+# --------------------------------------------------------------------------- #
+# Live operations: the agents replay real weeks (needs the local data cache).
+# --------------------------------------------------------------------------- #
+
+def _live_ready():
+    if not LIVE.ready:
+        raise HTTPException(503, LIVE.error or "live engine is still loading")
+
+
+@app.get("/api/live/status")
+def live_status():
+    return JSONResponse(LIVE.status())
+
+
+@app.get("/api/live/hospitals")
+def live_hospitals():
+    _live_ready()
+    return JSONResponse(LIVE.hospitals())
+
+
+@app.post("/api/live/reset")
+def live_reset(state: str, week_idx: int = 0):
+    _live_ready()
+    if state not in {s["state"] for s in LIVE.states}:
+        raise HTTPException(400, f"unknown state {state}")
+    return JSONResponse(LIVE.reset(state, week_idx))
+
+
+@app.post("/api/live/step")
+def live_step():
+    _live_ready()
+    return JSONResponse(LIVE.step())
+
+
+@app.post("/api/live/inject")
+def live_inject(hospital_id: str, mistake: str):
+    _live_ready()
+    try:
+        return JSONResponse(LIVE.inject(hospital_id, mistake))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
+
+@app.post("/api/live/tamper")
+def live_tamper():
+    _live_ready()
+    try:
+        return JSONResponse(LIVE.tamper())
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))

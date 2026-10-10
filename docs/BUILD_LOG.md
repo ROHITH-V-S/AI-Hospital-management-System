@@ -194,3 +194,33 @@ nationally -> per-state results added to RQ3.
 - Full end-to-end reproduction (`python experiments/run_all.py`, 26 min from
   cached data): RQ1, RQ2, RQ3 and the Houston case study were identical to
   the committed results apart from runtime fields.
+
+## 2026-10-11 — Step 10: live operations console
+
+Requested by the team: a dashboard that shows the system working live, not a
+report.
+
+- `mahros/server/live.py`: `LiveEngine` loads the real data at server start
+  (~15 s, background thread), keeps one session (state, week, live ledger),
+  and steps one real week at a time through the same `Platform.run_week` the
+  experiments are pinned to. Each step becomes a readable feed: reports,
+  Steward verdicts (with reasons), forecasts, proposals (with reasons),
+  hospital answers, ledger seal, result.
+- Inject a mistake: one hospital's report for the next week is corrupted
+  (x10, /10, x7, zero, swap), re-judged by the Steward on that hospital's real
+  history; if caught it is excluded, if not it is believed and the feed says
+  so. The feed also shows what the coordinator would have proposed had the
+  mistake been believed.
+- `Platform.week_frame/run_week(overrides=...)`: optional, live-only; the
+  experiments never pass it, and the equivalence tests are unchanged.
+- Live tamper on the session ledger; restart for a clean log.
+- UI: new first tab (map + newest-first feed + counters + inject + week-by-week
+  + audit log). Checked with real headless-Chrome screenshots; fixed oversized
+  arrowheads, overflowing selects, a broken bold word, feed order.
+- Hosted deployments without pandas/data show a clear "live mode not
+  available here" message; evidence tabs unaffected.
+- FastAPI `on_event` replaced with `lifespan` (deprecation warning).
+- `tests/test_live.py` (5, skipped without the data cache): week runs and is
+  sealed; lost digit at a >95%-full hospital is caught, excluded and the
+  prevented harm reported; injection lasts one week; tamper detected at the
+  right block. Total 56 tests pass.

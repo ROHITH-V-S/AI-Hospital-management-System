@@ -62,11 +62,33 @@ class Platform:
     def states(self) -> list[str]:
         return sorted(self.frame["state"].dropna().unique())
 
-    def run_week(self, state: str, week) -> WeekRun:
+    def week_frame(self, state: str, week, overrides: dict | None = None) -> pd.DataFrame:
+        """Decision inputs for one state-week, with optional live overrides.
+
+        ``overrides`` maps hospital id -> fields to replace for this week only
+        (``used``, ``beds``, ``level``, ``flags``, and optionally ``pred`` /
+        ``hi``). Used by the live console to inject a reporting mistake; the
+        experiments never pass it.
+        """
         week = pd.Timestamp(week)
-        wk = str(week.date())
         g = self.frame[(self.frame["state"] == state) & (self.frame["week"] == week)]
         g = g.reset_index(drop=True)
+        if overrides:
+            g = g.copy()
+            ids = g["hospital_pk"].astype(str)
+            for hid, o in overrides.items():
+                m = ids == str(hid)
+                for k, v in o.items():
+                    if k in g.columns:
+                        g.loc[m, k] = v
+                g.loc[m, "can_receive"] = g.loc[m, "level"].isin(["GREEN", "AMBER"])
+        return g
+
+    def run_week(self, state: str, week, overrides: dict | None = None) -> WeekRun:
+        week = pd.Timestamp(week)
+        wk = str(week.date())
+        g = self.week_frame(state, week, overrides)
+        overrides = {str(k): v for k, v in (overrides or {}).items()}
         prm = self.params
         agents = [HospitalAgent(str(r.hospital_pk), str(r.name), state,
                                 float(r.lat), float(r.lon)) for r in g.itertuples()]
@@ -75,8 +97,10 @@ class Platform:
         # 1-3. Reports, verdicts, forecasts.
         hospitals = []
         for a, r in zip(agents, g.itertuples()):
-            raw = self._raw.loc[(r.hospital_pk, week)]
-            msgs.append(a.report(wk, raw.to_dict()))
+            raw = self._raw.loc[(r.hospital_pk, week)].to_dict()
+            raw.update({k: v for k, v in overrides.get(a.hospital_id, {}).items()
+                        if k in ("used", "beds")})
+            msgs.append(a.report(wk, raw))
             reasons = explain(int(r.flags))
             msgs.append(Message("VERDICT", "steward", "coordinator", wk,
                                 {"hospital": a.hospital_id, "level": r.level,

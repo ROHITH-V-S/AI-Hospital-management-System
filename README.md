@@ -97,15 +97,23 @@ national average because its hospitals are often full together.
 
 ```bash
 pip install -e ".[dev,demo]"
+python experiments/run_all.py           # first time: download data + all results (~30 min)
 python -m mahros.server                 # dashboard -> http://127.0.0.1:8000
-python -m pytest                        # 51 tests
+python -m pytest                        # 56 tests
 node tests/ui_smoke.js                  # dashboard renders every result
-python experiments/run_all.py           # reproduce everything (~40 min)
 ```
 
-The dashboard needs only the committed files in `results/ui/`. Reproducing the
-results downloads the federal data once (~1M rows per release) into
-`data/cache/`.
+**Live operations** (the first tab) replays real weeks with the real agents:
+pick a state, press Play, and watch hospitals report, the Data Steward flag
+bad reports, the forecaster predict, the coordinator propose transfers and the
+hospitals accept or decline — each week sealed into the audit log. You can
+inject a typo into a hospital's report and watch it get caught, or tamper with
+the log and watch verification fail. It needs the downloaded data in
+`data/cache/` (about 15 s to load when the server starts). The other tabs
+(the evidence) need only the committed files in `results/ui/` and also work
+when deployed.
+
+Hands-free: `http://127.0.0.1:8000/?autoplay=3&speed=450&inject=lost_digit`.
 
 ## Layout
 
@@ -117,11 +125,11 @@ mahros/
   coordination/  linear-program planner, execution check, decision frames
   agents/        hospital, steward, forecaster, coordinator agents; weekly cycle
   ledger/        hash-chained audit ledger
-  server/        dashboard (FastAPI + one static page)
+  server/        dashboard + live operations console (FastAPI + one page)
   calibration/   Houston road-time data for the case study
 experiments/     fetch_national, rq1_trust_audit, rq2_forecast,
                  rq3_coordination, houston_case_study, build_ui_data, run_all
-tests/           51 unit tests + ui_smoke.js
+tests/           56 tests + ui_smoke.js
 docs/            REVIEW_GUIDE, METHODS, DATA_PROVENANCE, BUILD_LOG
 results/         every result as JSON/CSV; results/ui/ feeds the dashboard
 ```

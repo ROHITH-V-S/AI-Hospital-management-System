@@ -17,7 +17,7 @@ const UI = path.join(ROOT, "results/ui");
 const written = {};
 function el(id) {
   const o = {
-    id, _html: "", _text: "", value: "0", options: [], dataset: {}, classList: { toggle() {} },
+    id, _html: "", _text: "", value: "0", options: [], dataset: {}, style: {}, classList: { toggle() {} },
     set innerHTML(v) { this._html = String(v); written[id] = this._html;
       const m = this._html.match(/<option[^>]*value="([^"]*)"/); if (m && (this.value === "0" || !this.value)) this.value = m[1];
       this.options = (this._html.match(/<option/g) || []); },
@@ -46,6 +46,10 @@ global.fetch = async (url, opt) => {
     const data = JSON.parse(fs.readFileSync(p, "utf8"));
     return { ok: true, json: async () => data };
   }
+  if (url.startsWith("/api/live/status")) {
+    // The live console needs the local data cache; here we check it degrades cleanly.
+    return { ok: true, json: async () => ({ ready: false, loading: false, error: "no data cache in smoke test" }) };
+  }
   if (url.startsWith("/api/ledger")) {
     const idx = JSON.parse(fs.readFileSync(path.join(UI, "index.json"), "utf8"));
     const tam = url.includes("tamper");
@@ -59,7 +63,7 @@ global.fetch = async (url, opt) => {
 };
 
 (async () => {
-  const run = new Function(js + "\nreturn {renderOverview, renderTrust, renderForecast, renderCoord, drawWeek, renderAudit};");
+  const run = new Function(js + "\nreturn {renderLive, renderOverview, renderTrust, renderForecast, renderCoord, drawWeek, renderAudit};");
   const R = run();
   const errors = [];
   for (const [name, f] of Object.entries(R)) {

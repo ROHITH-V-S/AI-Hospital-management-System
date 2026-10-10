@@ -157,7 +157,36 @@ validated against the government's own corrections, combined with a
 coordination method that is scored against what hospitals actually reported
 next. (Do a full systematic literature search before submission.)
 
-## 6. If you get stuck
+## 6. The live demo (3 minutes)
+
+Start the server before the review (`python -m mahros.server`, wait ~15 s
+until the map appears). Open http://127.0.0.1:8000 — it opens on **Live
+operations**.
+
+1. **Set the scene (20 s).** "This is a state health department's screen.
+   These are the real hospitals in Texas, and the real reports they sent the
+   government in March 2023. Nothing here is made up."
+2. **Press ▶ Play (60 s).** Point at the feed, newest message on top:
+   hospitals report → the Data Steward flags reports that cannot be right, and
+   says why → the forecaster names hospitals that will be too full → the
+   coordinator proposes transfers, each with a reason → a week later each
+   hospital accepts only what its real numbers allow. Point at the counters:
+   patients above the safe level, patients moved.
+3. **Pause, then inject a mistake (60 s).** In "Inject a mistake" the fullest
+   hospital is already selected. Choose "Digit missing", press the button,
+   then "⏭ One week". Its report now says it is nearly empty. The Data Steward
+   marks it RED, and the red line says how many patients would have been sent
+   into a full hospital without that check. *That is the point of the project.*
+4. **Tamper with the log (30 s).** "Secretly change a past report": the chip
+   turns red and names the exact week that was changed.
+5. **Close (10 s).** "Every step you just saw is in the paper, measured over
+   69 weeks and every state — the Evidence tabs show the numbers."
+
+If the Steward does *not* catch an injected mistake (e.g. a swap at a
+hospital that is nearly full), say so: "It looked plausible, so it was
+believed — that is the limit we report: subtle errors are not caught."
+
+## 7. If you get stuck
 
 Say: *"That isn't something we measured."* Then say what you would measure.
 Every number in this project comes from a script; you never need to guess.
