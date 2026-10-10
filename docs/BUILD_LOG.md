@@ -191,3 +191,6 @@ nationally -> per-state results added to RQ3.
   or before the cut-off unchanged (no leakage); splits do not overlap.
 - RQ1 re-run produced byte-identical results (excluding runtime).
 - RQ2 re-run produced identical MAEs.
+- Full end-to-end reproduction (`python experiments/run_all.py`, 26 min from
+  cached data): RQ1, RQ2, RQ3 and the Houston case study were identical to
+  the committed results apart from runtime fields.
