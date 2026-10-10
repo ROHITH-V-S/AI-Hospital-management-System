@@ -1,20 +1,15 @@
 """MAHROS -- Multi-Agent Hospital Resource Optimization System.
 
-Decentralised inter-hospital negotiation for post-admission escalation
-transfers, with explicit fairness accounting, a tamper-evident audit ledger,
-and plain-English decision explanations.
+A government-side coordination platform, built and evaluated on real federal
+hospital capacity reports (HHS, 5,172 US hospitals, 2020-2024). Four kinds of
+agent work together each week:
+
+* Hospital agents report their numbers and decide whether to accept proposals.
+* A Data Steward agent decides which reports can be trusted, and says why.
+* A Forecast agent predicts next week's occupancy with a 90% range.
+* A Regional Coordinator agent per state proposes patient load balancing.
+
+Every message is written to a tamper-evident audit ledger.
 """
 
-__version__ = "0.1.0"
-
-from .core.types import (  # noqa: F401
-    Acuity,
-    Agreement,
-    Bid,
-    DemographicGroup,
-    Patient,
-    RequestStatus,
-    ResourceType,
-    Specialty,
-    TransferRequest,
-)
+__version__ = "0.2.0"

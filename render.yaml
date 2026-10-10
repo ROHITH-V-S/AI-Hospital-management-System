@@ -1,20 +1,13 @@
-# Render blueprint for the MAHROS live console.
+# Render blueprint for the MAHROS dashboard.
 #
 #   https://render.com  ->  New  ->  Blueprint  ->  point at this repo
 #
-# Two things here are load-bearing and should not be "optimised":
-#
-#   1. A SINGLE uvicorn worker. The console keeps one shared LiveNetwork and
-#      one WebSocket Hub in process memory. With more than one worker, half
-#      the visitors would talk to a different hospital network and the
-#      broadcast would only reach some of them. Do not add --workers.
-#
-#   2. No build step beyond pip install. The experiments take 7-20 minutes and
-#      must never run on the web instance -- results are built offline and
-#      committed as results/dashboard.html.
+# No build step beyond pip install: the experiments need the national data
+# cache and take tens of minutes, so they never run on the web instance. Their
+# outputs are committed in results/ui/ and served read-only.
 services:
   - type: web
-    name: mahros-live
+    name: mahros
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt

@@ -22,6 +22,7 @@ next-week forecasts the coordinator uses in RQ3).
 
 from __future__ import annotations
 
+import pickle
 import sys
 import time
 from pathlib import Path
@@ -74,6 +75,9 @@ def main() -> int:
 
     for h in F.HORIZONS:
         fr_t, fr_r = F.features(panel_t, h), F.features(panel_r, h)
+        # Row-by-row comparisons below rely on identical row order.
+        assert (fr_t["hospital_pk"].to_numpy() == fr_r["hospital_pk"].to_numpy()).all()
+        assert (fr_t["week"].to_numpy() == fr_r["week"].to_numpy()).all()
         m_t = F.fit(fr_t, h)
         m_r = F.fit(fr_r, h, train_on_untrusted=True)
         m_p = fit_persistence(fr_t, h)
@@ -131,6 +135,10 @@ def main() -> int:
                 "persist_pred": p3["pred"], "persist_hi": p3["hi"],
                 "beds_0": dec["beds_0"], "occ_0": dec["occ_0"]})
             fc.to_parquet(hhs.CACHE / "forecasts_h1.parquet", index=False)
+            # The fitted next-week models, so RQ3 can re-forecast from
+            # deliberately corrupted reports with exactly these models.
+            with (hhs.CACHE / "models_h1.pkl").open("wb") as fh:
+                pickle.dump({"trusted": m_t, "raw": m_r, "persistence": m_p}, fh)
 
     out["runtime_s"] = round(time.perf_counter() - t0, 1)
     print("wrote", write_json("rq2_forecast.json", out))

@@ -137,3 +137,57 @@ Honest findings, kept as found (no tuning on the test window):
 - **Masking untrusted inputs does not improve average forecast accuracy**
   (+0.10 pts worse at h=1). The Steward's value must therefore be shown on
   decisions under large errors (RQ3), not on average accuracy.
+
+## 2026-10-10 — Step 5: agents and coordination (`mahros/agents/`, `mahros/coordination/`)
+
+- Agents: HospitalAgent (one per hospital, final say over its own beds),
+  DataStewardAgent, ForecastAgent, RegionalCoordinatorAgent (one per state,
+  proposes only). Weekly cycle REPORT -> VERDICT -> FORECAST -> PROPOSAL ->
+  RESPONSE -> OUTCOME, one ledger block per state-week (`platform.py`).
+- Planner: transportation LP (HiGHS) per state; receivers judged on the upper
+  90% forecast bound; plan checked against the next week's real reports.
+- Fix during build: `execute()` used to drop arcs to untrusted receivers before
+  senders decided, which a real hospital could not know. Changed to the agent
+  order (senders decide, then receivers). `tests/test_agents.py` pins the
+  agent path equal to the fast path in three trust configurations.
+- Fix during build: platform held an unused half-built steward object; removed.
+- New audit ledger (`mahros/ledger/chain.py`): deterministic (content + week
+  label only), Merkle root per block, `verify()` names the first bad block.
+
+## 2026-10-10 — Step 6: removal of v0.1
+
+Removed (recoverable at tag `v0.1-negotiation`): `core, eval, fairness,
+hospital, llm, negotiation, privacy, sim`, old ledger interface and Solidity
+contract, old server console, CLI, 13 old experiment scripts, 7 old test
+files, old dashboard, `vercel.json` (static-only hosting cannot serve the
+ledger API), old docs (PANEL_GUIDE, DEMO, MODEL_ASSUMPTIONS, old
+DATA_PROVENANCE). Kept: Houston OSRM route data and fetch scripts.
+
+## 2026-10-10 — Step 7: Houston case study (`experiments/houston_case_study.py`)
+
+27 hospitals with OSRM driving times. Straight-line vs drive time correlation
+0.98; road / straight median 1.20 (p90 1.35). Re-planning every test week with
+a 60-min drive radius vs 80 km straight line: 13.46% vs 13.48% absorbed, 96%
+of transferred load identical. Finding: Houston absorbs ~13% vs ~50%
+nationally -> per-state results added to RQ3.
+
+## 2026-10-10 — Step 8: dashboard
+
+- `mahros/server/app.py`: read-only; serves `results/ui/*.json` (name
+  whitelist regex), rebuilds the ledger from raw entries at startup and checks
+  it matches the published head; tamper/reset demo on an in-memory copy.
+- `mahros/server/static/index.html`: one question per tab with a one-sentence
+  answer, evidence, and a "what this does not show" box. No external
+  libraries; light/dark.
+- `tests/test_server.py` (path traversal blocked, tamper detected at the right
+  block, reset restores). `tests/ui_smoke.js` runs every render function
+  against the real result files with a fake DOM and fails on any
+  undefined/NaN shown.
+
+## 2026-10-10 — Step 9: verification
+
+- 51 tests pass (`python -m pytest`).
+- `tests/test_forecast.py`: rewriting every future value leaves all inputs at
+  or before the cut-off unchanged (no leakage); splits do not overlap.
+- RQ1 re-run produced byte-identical results (excluding runtime).
+- RQ2 re-run produced identical MAEs.

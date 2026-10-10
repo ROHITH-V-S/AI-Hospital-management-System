@@ -1,0 +1,43 @@
+{
+  "data": {
+    "corrected": {
+      "sha256": "96c7fc1c33fa07d8e83c50c904ed90144009858095f745a513c489191e30bab4",
+      "rows": 1045406,
+      "fetched_at": "2026-10-10T16:40:35+00:00"
+    },
+    "raw": {
+      "sha256": "cc5cbbea06ae0314d681ffc8788ec42f52e37e8808a9e56eec60ee6ea9b715b6",
+      "rows": 964632,
+      "fetched_at": "2026-10-10T16:44:56+00:00"
+    }
+  },
+  "hospitals_in_routes": 27,
+  "hospitals_matched": 27,
+  "unmatched_ccns": [],
+  "geometry": {
+    "pairs": 351,
+    "road_over_straight_median": 1.2002909923717284,
+    "road_over_straight_p90": 1.3489079745880515,
+    "drive_minutes_per_straight_km_median": 1.1020560373226471,
+    "max_straight_km": 72.59601162848445,
+    "max_drive_min": 66.70833333333333,
+    "corr_straight_vs_drive": 0.9824839308374635,
+    "pairs_within_80km_straight": 351,
+    "pairs_within_60min_drive": 337
+  },
+  "weeks": 69,
+  "plans": {
+    "straight_80km": {
+      "overload_patient_days": 181447.76999999993,
+      "absorbed_patient_days": 24467.39274145531,
+      "share_absorbed": 0.13484537584262027
+    },
+    "drive_60min": {
+      "overload_patient_days": 181447.76999999993,
+      "absorbed_patient_days": 24420.960148496757,
+      "share_absorbed": 0.1345894752440152
+    }
+  },
+  "weighted_overlap_of_transfers": 0.9623256215105936,
+  "runtime_s": 11.2
+}

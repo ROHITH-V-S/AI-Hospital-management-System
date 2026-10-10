@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAHROS</title>
+<style>
+:root{
+  --bg:#f7f7f5; --panel:#ffffff; --ink:#1d1d1b; --muted:#5f5f5a; --line:#e2e1dc;
+  --accent:#2f5d8a; --accent-soft:#e6eef6;
+  --green:#2e7d4f; --amber:#b7791f; --red:#b83a3a; --grey:#8a8a85;
+  --green-soft:#e5f2ea; --amber-soft:#faf0dc; --red-soft:#f8e3e3; --grey-soft:#eeeeeb;
+  --chart1:#2f5d8a; --chart2:#c06a2b; --chart3:#7a7a75; --band:rgba(47,93,138,.15);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151614; --panel:#1e1f1d; --ink:#ecebe6; --muted:#a3a29b; --line:#33342f;
+    --accent:#7fb0de; --accent-soft:#22313f;
+    --green:#5fbf88; --amber:#e0a84a; --red:#e57373; --grey:#9a9a94;
+    --green-soft:#1f3328; --amber-soft:#3a2f1b; --red-soft:#3d2424; --grey-soft:#2a2b28;
+    --chart1:#7fb0de; --chart2:#e39a5c; --chart3:#a3a29b; --band:rgba(127,176,222,.18);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151614; --panel:#1e1f1d; --ink:#ecebe6; --muted:#a3a29b; --line:#33342f;
+  --accent:#7fb0de; --accent-soft:#22313f;
+  --green:#5fbf88; --amber:#e0a84a; --red:#e57373; --grey:#9a9a94;
+  --green-soft:#1f3328; --amber-soft:#3a2f1b; --red-soft:#3d2424; --grey-soft:#2a2b28;
+  --chart1:#7fb0de; --chart2:#e39a5c; --chart3:#a3a29b; --band:rgba(127,176,222,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--panel);border-bottom:1px solid var(--line)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+.top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:18px 0 6px}
+.top h1{font-size:20px;margin:0;letter-spacing:.2px}
+.top .sub{color:var(--muted);font-size:13.5px}
+nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:0}
+nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);
+  font:inherit;font-size:14px;padding:10px 12px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+main{padding:22px 0 60px}
+section.tab{display:none} section.tab.on{display:block}
+.qa{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:18px}
+.qa .q{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.qa .a{font-size:18px;line-height:1.45}
+h2{font-size:16px;margin:26px 0 10px}
+h3{font-size:14.5px;margin:0 0 6px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.big{font-size:30px;font-weight:650;line-height:1.1;margin:4px 0}
+.muted{color:var(--muted)} .small{font-size:13px}
+.not{background:var(--grey-soft);border-radius:10px;padding:12px 16px;margin-top:18px;font-size:14px}
+.not b{display:block;margin-bottom:4px}
+.not ul{margin:4px 0 0;padding-left:18px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12.5px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600}
+.GREEN{background:var(--green-soft);color:var(--green)}
+.AMBER{background:var(--amber-soft);color:var(--amber)}
+.RED{background:var(--red-soft);color:var(--red)}
+.MISSING{background:var(--grey-soft);color:var(--grey)}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.flow .step{flex:1 1 170px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.flow .step .who{font-weight:650;font-size:14px}
+.flow .step .num{color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.05em}
+.flow .arrow{align-self:center;color:var(--muted);font-size:18px}
+select,button.act{font:inherit;font-size:14px;padding:6px 10px;border-radius:8px;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+button.act{cursor:pointer} button.act.primary{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+svg{display:block;width:100%;height:auto}
+svg text{fill:var(--muted);font-size:11px;font-family:inherit}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.legend i.dot{width:9px;height:9px;border-radius:50%}
+.list{max-height:420px;overflow:auto}
+.prop{border-bottom:1px solid var(--line);padding:8px 0;font-size:13.5px}
+.prop:last-child{border-bottom:0}
+.hash{font-family:ui-monospace,Consolas,monospace;font-size:12px;word-break:break-all}
+.ok{color:var(--green);font-weight:650} .bad{color:var(--red);font-weight:650}
+.kbd{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;background:var(--grey-soft);padding:1px 6px;border-radius:5px}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding:16px 0}
+@media (max-width:600px){.qa .a{font-size:16px}.big{font-size:24px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <h1>MAHROS</h1>
+      <span class="sub">Multi-Agent Hospital Resource Optimization System · built on real federal reports from US hospitals, 2020–2024</span>
+    </div>
+    <nav role="tablist">
+      <button data-tab="overview" aria-selected="true">Overview</button>
+      <button data-tab="trust">1 · Can we trust the reports?</button>
+      <button data-tab="forecast">2 · Can we see next week?</button>
+      <button data-tab="coord">3 · Can hospitals share the load?</button>
+      <button data-tab="audit">Audit log</button>
+      <button data-tab="limits">Limits</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ================================================================ OVERVIEW -->
+<section class="tab on" id="overview">
+  <div class="qa">
+    <div class="q">What is this?</div>
+    <div class="a">A platform a state health department could run: every week it checks which hospital reports can be believed, predicts which hospitals will be too full, and proposes moving patients to nearby hospitals with room. Each hospital decides for itself whether to accept.</div>
+  </div>
+
+  <h2>How one week works — five agents, one record</h2>
+  <div class="flow">
+    <div class="step"><div class="num">STEP 1</div><div class="who">Hospital agents</div><div class="small muted">Each hospital submits its numbers: beds, patients, ICU.</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">STEP 2</div><div class="who">Data Steward</div><div class="small muted">Marks every report <span class="pill GREEN">GREEN</span> <span class="pill AMBER">AMBER</span> <span class="pill RED">RED</span> and says why.</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">STEP 3</div><div class="who">Forecaster</div><div class="small muted">Predicts next week's occupancy, with a 90% range.</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">STEP 4</div><div class="who">State coordinator</div><div class="small muted">Proposes transfers from too-full to nearby hospitals with room.</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">STEP 5</div><div class="who">Hospitals decide</div><div class="small muted">Accept only what their real numbers allow. Everything is sealed in the audit log.</div></div>
+  </div>
+
+  <h2>The three findings</h2>
+  <div class="grid g3" id="ov-cards"></div>
+
+  <h2>Where the data comes from</h2>
+  <div class="card" id="ov-data"></div>
+
+  <div class="not"><b>What MAHROS does not do</b>
+    <ul>
+      <li>It does not move real patients. Every transfer here is a proposal tested against what hospitals reported the following week.</li>
+      <li>It does not see individual patients — only weekly hospital totals. No patient data is used anywhere.</li>
+      <li>It does not override hospitals. A proposal becomes a transfer only if both hospitals' real numbers allow it.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================================================================ TRUST -->
+<section class="tab" id="trust">
+  <div class="qa">
+    <div class="q">Question 1 · Can we trust what hospitals report?</div>
+    <div class="a" id="tr-answer">…</div>
+  </div>
+
+  <div class="grid g4" id="tr-levels"></div>
+
+  <h2>What the Data Steward looks for</h2>
+  <div class="card"><table id="tr-rules"></table></div>
+
+  <h2>See a real flagged report</h2>
+  <div class="card">
+    <div class="controls"><label class="small muted" for="tr-pick">Problem type</label><select id="tr-pick"></select></div>
+    <div id="tr-ex-text" class="small"></div>
+    <div id="tr-ex-chart"></div>
+    <div class="legend"><span><i style="background:var(--chart1)"></i>Patients</span><span><i style="background:var(--chart3)"></i>Staffed beds</span><span><i class="dot" style="background:var(--red)"></i>Week marked RED</span></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>Could the frozen counts be coincidence?</h3><div id="tr-chance" class="small"></div></div>
+    <div class="card"><h3>Does the government's own correction agree?</h3><div id="tr-hhs" class="small"></div></div>
+  </div>
+
+  <h2>Planted errors: we hid known mistakes in clean reports</h2>
+  <div class="card"><table id="tr-planted"></table></div>
+
+  <h2>Share of reports by verdict, month by month</h2>
+  <div class="card"><div id="tr-month"></div>
+    <div class="legend"><span><i style="background:var(--red)"></i>RED</span><span><i style="background:var(--grey)"></i>MISSING</span><span><i style="background:var(--amber)"></i>AMBER</span></div></div>
+
+  <div class="not"><b>What this does not show</b>
+    <ul>
+      <li>A RED flag means "very unlikely to be a real measurement", not "the hospital lied". Most causes are likely technical: a feed that stopped updating, a typo.</li>
+      <li>Small, steady errors (a count 10% too high) are mostly not caught. The planted-error table shows this.</li>
+      <li>The government corrected only some errors, so it is not a complete answer key. A random sample of RED flags is exported for manual review (<span class="kbd">results/rq1_review_sample.csv</span>).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================================================================ FORECAST -->
+<section class="tab" id="forecast">
+  <div class="qa">
+    <div class="q">Question 2 · Can we see next week coming?</div>
+    <div class="a" id="fc-answer">…</div>
+  </div>
+
+  <h2>Average error, in occupancy points (lower is better)</h2>
+  <div class="card"><table id="fc-table"></table>
+    <p class="small muted" style="margin:8px 0 0">Tested on 2023–2024: weeks the model never saw. Scored only where the true value is a trusted report. "Next week = this week" is the simplest possible forecast; anything worth using must beat it.</p></div>
+
+  <h2>One hospital, week by week</h2>
+  <div class="card">
+    <div class="controls"><label class="small muted" for="fc-pick">Hospital</label><select id="fc-pick"></select></div>
+    <div id="fc-chart"></div>
+    <div class="legend"><span><i style="background:var(--chart1)"></i>Actual</span><span><i style="background:var(--chart2)"></i>Forecast</span><span><i style="background:var(--band);height:9px"></i>90% range</span></div>
+  </div>
+
+  <div class="not"><b>What this does not show</b>
+    <ul id="fc-not"></ul>
+  </div>
+</section>
+
+<!-- ================================================================ COORD -->
+<section class="tab" id="coord">
+  <div class="qa">
+    <div class="q">Question 3 · Could hospitals have shared the load?</div>
+    <div class="a" id="co-answer">…</div>
+  </div>
+
+  <h2>Share of "too full" patient-days that could have been absorbed</h2>
+  <div class="card"><div id="co-arms"></div><p class="small muted" id="co-arms-note" style="margin:6px 0 0"></p></div>
+
+  <h2>It depends a lot on where you are</h2>
+  <div class="grid g2">
+    <div class="card"><h3>By state</h3><div class="small muted" style="margin-bottom:6px">States with the most "too full" patient-days. Where every hospital nearby is full, there is little room to share.</div><table id="co-states"></table></div>
+    <div class="card"><h3>Is straight-line distance good enough? (Houston check)</h3><div id="co-houston" class="small"></div></div>
+  </div>
+
+  <h2>Explore a week</h2>
+  <div class="card">
+    <div class="controls">
+      <label class="small muted" for="co-week">Week</label><select id="co-week"></select>
+      <label class="small muted" for="co-state">State</label><select id="co-state"></select>
+    </div>
+    <div class="grid g4" id="co-totals" style="margin-bottom:12px"></div>
+    <div class="grid g2">
+      <div><div id="co-map"></div>
+        <div class="legend"><span><i class="dot" style="background:var(--red)"></i>Forecast above safe level</span><span><i class="dot" style="background:var(--green)"></i>Has room</span><span><i class="dot" style="background:var(--grey)"></i>Report not trusted</span><span><i style="background:var(--accent)"></i>Transfer carried out</span></div></div>
+      <div><h3>Proposals and what hospitals said</h3><div class="list" id="co-props"></div></div>
+    </div>
+  </div>
+
+  <h2>If some reports are wrong</h2>
+  <div class="card"><table id="co-planted"></table><p class="small muted" style="margin:6px 0 0" id="co-planted-note"></p></div>
+
+  <h2>Does the answer depend on our assumptions?</h2>
+  <div class="card"><table id="co-sens"></table></div>
+
+  <div class="not"><b>What this does not show</b>
+    <ul>
+      <li>No patient was actually moved. Numbers are what could have been absorbed, checked against what hospitals reported the following week.</li>
+      <li>It ignores clinical suitability (specialty, how sick the patient is), ambulance availability and patient choice. Real absorption would be lower.</li>
+      <li>Distance is straight-line. The Houston case study checks this against real driving times.</li>
+      <li>"Safe level" (90% full), the 80 km radius and the 5%-per-week cap are our assumptions; the sensitivity table shows how much they matter.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================================================================ AUDIT -->
+<section class="tab" id="audit">
+  <div class="qa">
+    <div class="q">Can anyone quietly change the record afterwards?</div>
+    <div class="a">No. Every report, verdict, forecast, proposal and answer is chained together by fingerprints (hashes). Change one number anywhere and every check after it fails.</div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Status</h3><div id="au-status" class="small">…</div>
+      <div class="controls" style="margin-top:12px">
+        <button class="act" id="au-tamper">Secretly change a past report</button>
+        <button class="act" id="au-reset">Restore the original</button>
+      </div></div>
+    <div class="card"><h3>Latest blocks</h3><div id="au-blocks" class="list"></div></div>
+  </div>
+  <div class="not"><b>What this does not show</b>
+    <ul><li>The log proves nothing was changed after it was written. It cannot prove a report was true when written — that is the Data Steward's job.</li>
+    <li>It is a ledger held by the coordinating authority and checkable by anyone with the entries. It is not a public blockchain, and does not need to be.</li></ul>
+  </div>
+</section>
+
+<!-- ================================================================ LIMITS -->
+<section class="tab" id="limits">
+  <div class="qa">
+    <div class="q">What should a careful reader keep in mind?</div>
+    <div class="a">The data is real and official, but it is weekly, self-reported and ends in April 2024. The transfers are proposals, scored against what really happened next — not transfers that took place.</div>
+  </div>
+  <div class="card"><table>
+    <tr><th>Limit</th><th>Why it matters</th><th>What we did about it</th></tr>
+    <tr><td>Weekly averages, not daily or hourly</td><td>Within-week peaks are invisible.</td><td>The platform is framed as weekly planning, as state coordination centres did during COVID-19 — not real-time bed assignment.</td></tr>
+    <tr><td>Self-reported data</td><td>Reports can be wrong.</td><td>That is Question 1: errors are measured, flagged and excluded, and the effect of planted errors on decisions is tested.</td></tr>
+    <tr><td>Data ends 2024-04-21</td><td>The federal mandate lapsed; later public data is state-level only.</td><td>Stated. The method needs only the 12 bed fields hospitals must again report to NHSN since Nov 2024.</td></tr>
+    <tr><td>No record of actual transfers</td><td>We cannot see who really sent patients where.</td><td>Proposals are scored against the next week's real reports, and hospitals accept only what those reports allow.</td></tr>
+    <tr><td>Bed totals, not specialties</td><td>An ICU patient cannot go to any free bed.</td><td>Stated as the main reason real absorption would be lower.</td></tr>
+    <tr><td>Straight-line distance</td><td>Roads are longer than lines.</td><td>Checked against real driving times for 27 Houston hospitals.</td></tr>
+  </table></div>
+</section>
+
+</main>
+<footer><div class="wrap" id="foot">Data: U.S. Department of Health &amp; Human Services, public domain.</div></footer>
+
+<script>
+"use strict";
+const $ = (s, el=document) => el.querySelector(s);
+const pct = (x, d=1) => x == null ? "–" : (100*x).toFixed(d) + "%";
+const num = (x, d=0) => x == null ? "–" : Number(x).toLocaleString(undefined, {maximumFractionDigits:d, minimumFractionDigits:d});
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cache = {};
+async function get(name){ if(!cache[name]){ const r = await fetch("/ui/"+name); if(!r.ok) throw new Error(name+" "+r.status); cache[name] = await r.json(); } return cache[name]; }
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+// ---------------------------------------------------------------- tabs
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll("section.tab").forEach(s => s.classList.toggle("on", s.id === b.dataset.tab));
+  try { localStorage.setItem("mahros-tab", b.dataset.tab); } catch(e) {}
+  render(b.dataset.tab);
+}));
+
+// ---------------------------------------------------------------- tiny SVG charts
+function svgEl(w, h){ return `<svg viewBox="0 0 ${w} ${h}" role="img">`; }
+function lineChart(series, opt){
+  // series: [{points:[[x,y]], color, width, dash}] ; x = Date, y = number
+  const W = opt.w || 760, H = opt.h || 240, L = 46, R = 10, T = 10, B = 26;
+  const xs = series.flatMap(s => s.points.map(p => +p[0]));
+  const ys = series.flatMap(s => s.points.map(p => p[1]).filter(v => v != null));
+  (opt.bands||[]).forEach(b => b.points.forEach(p => { if(p[1]!=null) ys.push(p[1]); if(p[2]!=null) ys.push(p[2]); }));
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  let y0 = opt.ymin ?? Math.min(...ys), y1 = opt.ymax ?? Math.max(...ys);
+  if (y1 - y0 < 1e-9) { y1 += 1; y0 -= 1; }
+  const pad = (y1-y0)*0.06; if(opt.ymin==null) y0 -= pad; if(opt.ymax==null) y1 += pad;
+  const X = v => L + (W-L-R) * (v - x0) / ((x1 - x0) || 1);
+  const Y = v => T + (H-T-B) * (1 - (v - y0) / (y1 - y0));
+  let s = svgEl(W, H);
+  for (let i = 0; i <= 4; i++){ const v = y0 + (y1-y0)*i/4; s += `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css('--line')}"/>`;
+    s += `<text x="${L-6}" y="${Y(v)+4}" text-anchor="end">${opt.yfmt ? opt.yfmt(v) : v.toFixed(0)}</text>`; }
+  const ticks = 5; for (let i = 0; i <= ticks; i++){ const v = x0 + (x1-x0)*i/ticks; const d = new Date(v);
+    s += `<text x="${X(v)}" y="${H-6}" text-anchor="middle">${d.toLocaleDateString(undefined,{month:"short",year:"2-digit"})}</text>`; }
+  (opt.bands||[]).forEach(b => {
+    const pts = b.points.filter(p => p[1]!=null && p[2]!=null);
+    if (!pts.length) return;
+    const up = pts.map(p => `${X(+p[0])},${Y(p[2])}`).join(" ");
+    const dn = pts.slice().reverse().map(p => `${X(+p[0])},${Y(p[1])}`).join(" ");
+    s += `<polygon points="${up} ${dn}" fill="${b.color}" stroke="none"/>`;
+  });
+  if (opt.hline != null) s += `<line x1="${L}" x2="${W-R}" y1="${Y(opt.hline)}" y2="${Y(opt.hline)}" stroke="${css('--red')}" stroke-dasharray="4 4"/>`;
+  series.forEach(se => {
+    let d = "", pen = false;
+    se.points.forEach(p => { if (p[1] == null){ pen = false; return; } d += (pen ? "L" : "M") + X(+p[0]) + "," + Y(p[1]); pen = true; });
+    s += `<path d="${d}" fill="none" stroke="${se.color}" stroke-width="${se.width||2}" ${se.dash ? `stroke-dasharray="${se.dash}"` : ""} stroke-linejoin="round" stroke-linecap="round"/>`;
+    (se.marks||[]).forEach(p => { if(p[1]!=null) s += `<circle cx="${X(+p[0])}" cy="${Y(p[1])}" r="4.5" fill="${css('--red')}" stroke="${css('--panel')}" stroke-width="1.5"><title>${esc(p[2]||"")}</title></circle>`; });
+  });
+  return s + "</svg>";
+}
+function hbars(rows, opt={}){
+  // rows: [{label, value (0..1), note, color}]
+  const W = 760, rowH = 34, L = 210, R = 70, H = rows.length * rowH + 6;
+  const max = opt.max ?? Math.max(...rows.map(r => r.value), 1e-9);
+  let s = svgEl(W, H);
+  rows.forEach((r, i) => {
+    const y = 4 + i*rowH, w = (W-L-R) * Math.max(0, r.value) / max;
+    s += `<text x="${L-10}" y="${y+19}" text-anchor="end" style="fill:${css('--ink')};font-size:13px">${esc(r.label)}</text>`;
+    s += `<rect x="${L}" y="${y+6}" width="${w}" height="18" rx="4" fill="${r.color || css('--chart1')}"/>`;
+    s += `<text x="${L+w+8}" y="${y+19}" style="fill:${css('--ink')};font-size:13px;font-weight:600">${opt.fmt ? opt.fmt(r.value) : pct(r.value)}</text>`;
+  });
+  return s + "</svg>";
+}
+
+// ---------------------------------------------------------------- OVERVIEW
+async function renderOverview(){
+  const [r1, r2, r3, man] = await Promise.all([get("rq1_trust_audit.json"), get("rq2_forecast.json"), get("rq3_coordination.json"), get("manifest.json")]);
+  const p = r1.prevalence, h1 = r2.horizons["1"], h2 = r2.horizons["2"], m = r3.arms.mahros, o = r3.arms.oracle;
+  const cards = [
+    {k:"1 · Trust", big: pct(p.share_hospitals_with_any_red,0), t:`of hospitals sent at least one report that cannot be right — most often a patient count frozen for weeks. Reports the Steward flagged were ${r1.hhs_labels.enrichment_red_vs_green.toFixed(1)}× more likely to be corrected later by the government itself.`, tab:"trust"},
+    {k:"2 · Forecast", big: h1.mae_points.model_trusted.toFixed(1) + " pts", t:`average error predicting next week's occupancy, against ${h1.mae_points.persistence.toFixed(1)} for "same as this week". The gain is larger two weeks ahead (${h2.mae_points.model_trusted.toFixed(1)} vs ${h2.mae_points.persistence.toFixed(1)}).`, tab:"forecast"},
+    {k:"3 · Coordination", big: pct(m.share_of_overload_absorbed,0), t:`of the patient-days spent above a 90% safe occupancy level could have been absorbed by hospitals with room within 80 km, checked against what they reported the next week. Perfect foresight would reach ${pct(o.share_of_overload_absorbed,0)}.`, tab:"coord"},
+  ];
+  $("#ov-cards").innerHTML = cards.map(c => `<div class="card"><div class="small muted">${c.k}</div><div class="big">${c.big}</div><div class="small">${c.t}</div><p style="margin:10px 0 0"><button class="act" onclick="document.querySelector('nav button[data-tab=${c.tab}]').click()">See the evidence →</button></p></div>`).join("");
+  const c = man.corrected, rw = man.raw || {};
+  $("#ov-data").innerHTML = `<table>
+    <tr><th>Dataset</th><td><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.title)}</a> — ${esc(c.publisher)}, ${esc(c.licence)}</td></tr>
+    <tr><th>Size</th><td>${num(c.rows)} weekly hospital reports (corrected) and ${num(rw.rows)} (raw, before government correction); ${num(p.hospitals)} general and critical-access hospitals analysed</td></tr>
+    <tr><th>Period</th><td>August 2020 – April 2024 (federal reporting mandate)</td></tr>
+    <tr><th>Fingerprint</th><td class="hash">SHA-256 ${esc(c.sha256)}</td></tr>
+    <tr><th>Downloaded</th><td>${esc(c.fetched_at)}</td></tr></table>`;
+  $("#foot").innerHTML = `Data: U.S. Department of Health &amp; Human Services, public domain · downloaded ${esc(c.fetched_at.slice(0,10))} · every number on this page is read from <span class="kbd">results/</span>, produced by the scripts in <span class="kbd">experiments/</span>.`;
+}
+
+// ---------------------------------------------------------------- TRUST
+async function renderTrust(){
+  const [r1, tr] = await Promise.all([get("rq1_trust_audit.json"), get("trust.json")]);
+  const p = r1.prevalence, ch = r1.chance, hl = r1.hhs_labels;
+  $("#tr-answer").textContent = `Mostly — but not always. ${pct(p.level_share.RED,1)} of weekly reports cannot be right, and ${num(p.hospitals_with_any_red)} of ${num(p.hospitals)} hospitals (${pct(p.share_hospitals_with_any_red,0)}) sent at least one. The Data Steward agent catches them and says why.`;
+  const lv = [["GREEN","Usable as reported"],["AMBER","Usable, minor issue"],["RED","Cannot be right"],["MISSING","Nothing usable"]];
+  $("#tr-levels").innerHTML = lv.map(([k,t]) => `<div class="card"><span class="pill ${k}">${k}</span><div class="big">${pct(p.level_share[k]||0,1)}</div><div class="small muted">${t} · ${num(p.level_count[k]||0)} reports</div></div>`).join("");
+  const rules = r1.rules;
+  $("#tr-rules").innerHTML = `<tr><th>Check</th><th>Verdict</th><th>In plain words</th><th class="n">Reports</th></tr>` +
+    Object.entries(rules).map(([code, r]) => `<tr><td><b>${esc(r.title)}</b></td><td><span class="pill ${r.level}">${r.level}</span></td><td class="small">${esc(r.explain)}</td><td class="n">${num(p.rule_counts[code]||0)}</td></tr>`).join("");
+  const sel = $("#tr-pick");
+  sel.innerHTML = tr.examples.map((e,i) => `<option value="${i}">${esc(e.title)}</option>`).join("");
+  const draw = () => {
+    const e = tr.examples[+sel.value];
+    $("#tr-ex-text").innerHTML = `<p style="margin:0 0 8px"><b>${esc(e.hospital)}</b>, ${esc(e.city)}, ${esc(e.state)} — flagged ${esc(e.flag_week)}. ${esc(e.explain)}</p>`;
+    const pts = k => e.series.map(s => [new Date(s.week), s[k]]);
+    const marks = e.series.filter(s => s.level === "RED").map(s => [new Date(s.week), s.used, s.why.join(", ")]);
+    $("#tr-ex-chart").innerHTML = lineChart([
+      {points: pts("beds"), color: css("--chart3"), width: 1.5, dash: "5 4"},
+      {points: pts("used"), color: css("--chart1"), width: 2.2, marks}], {h: 230});
+  };
+  sel.onchange = draw; draw();
+  $("#tr-chance").innerHTML = `<p style="margin:0">An honestly varying patient count repeats exactly from one week to the next ${pct(ch.p_repeat,2)} of the time. Three identical weeks in a row should therefore happen about <b>${num(ch.frozen_flags_expected_by_chance)}</b> times by chance across ${num(ch.eligible_weeks)} eligible weeks.</p>
+    <p style="margin:8px 0 0">It happened <b>${num(ch.frozen_flags_observed)}</b> times. Chance explains about ${pct(ch.share_explainable_by_chance,0)} of them.</p>`;
+  const bands = hl.recall_by_census_correction_size;
+  $("#tr-hhs").innerHTML = `<p style="margin:0">The government published both the original reports and a corrected version. Of the reports the Steward marked RED, <b>${pct(hl.share_of_raw_red_that_hhs_changed,0)}</b> were later changed by the government, against <b>${pct(hl.share_of_raw_green_that_hhs_changed,1)}</b> of GREEN ones — <b>${hl.enrichment_red_vs_green.toFixed(1)}×</b> more often.</p>
+    <table style="margin-top:8px"><tr><th>Size of the government's correction</th><th class="n">Corrections</th><th class="n">Also flagged RED</th></tr>
+    ${Object.entries(bands).map(([k,v]) => `<tr><td>${esc(k)}</td><td class="n">${num(v.n)}</td><td class="n">${pct(v.recall_red,0)}</td></tr>`).join("")}</table>
+    <p class="muted" style="margin:6px 0 0">Most government corrections are adjustments of about 1%, which no check should flag. Big corrections are caught far more often.</p>`;
+  $("#tr-planted").innerHTML = `<tr><th>Planted mistake</th><th class="n">Times planted</th><th class="n">Caught</th></tr>` +
+    Object.values(r1.planted).map(v => `<tr><td>${esc(v.description)}</td><td class="n">${num(v.n)}</td><td class="n"><b>${pct(v.caught,0)}</b></td></tr>`).join("") +
+    `<tr><td colspan="3" class="small muted">Correct neighbouring weeks wrongly flagged: ${num(Object.values(r1.planted).reduce((a,v)=>a+v.collateral_alarms_per_episode*v.n,0))} across all ${num(Object.values(r1.planted).reduce((a,v)=>a+v.n,0))} planted mistakes.</td></tr>`;
+  const months = Object.keys(tr.monthly_share).sort();
+  const ser = k => months.map(m => [new Date(m+"-01"), tr.monthly_share[m][k]]);
+  $("#tr-month").innerHTML = lineChart([
+    {points: ser("RED"), color: css("--red")}, {points: ser("MISSING"), color: css("--grey")},
+    {points: ser("AMBER"), color: css("--amber")}], {h: 220, ymin: 0, yfmt: v => (100*v).toFixed(0)+"%"});
+}
+
+// ---------------------------------------------------------------- FORECAST
+async function renderForecast(){
+  const [r2, fc] = await Promise.all([get("rq2_forecast.json"), get("forecast.json")]);
+  const H = r2.horizons, h1 = H["1"];
+  const d1 = h1.vs_persistence.model_trusted;
+  $("#fc-answer").textContent = `Partly. Our forecaster is reliably better than "next week = this week", but by a small margin one week ahead (${h1.mae_points.model_trusted.toFixed(2)} vs ${h1.mae_points.persistence.toFixed(2)} points). Its 90% ranges contain the true value ${pct(h1.interval.coverage,0)} of the time, as promised.`;
+  const rows = [["persistence","Next week = this week"],["mean4","Average of the last 4 weeks"],["model_raw","Our model, trained on every report as published"],["model_trusted","Our model, untrusted reports removed (used by MAHROS)"]];
+  const best = h => Math.min(...rows.map(r => H[h].mae_points[r[0]]));
+  $("#fc-table").innerHTML = `<tr><th>Method</th><th class="n">1 week ahead</th><th class="n">2 weeks</th><th class="n">4 weeks</th></tr>` +
+    rows.map(([k,t]) => `<tr><td>${t}</td>${["1","2","4"].map(h => { const v = H[h].mae_points[k]; return `<td class="n">${v === best(h) ? "<b>"+v.toFixed(2)+"</b>" : v.toFixed(2)}</td>`; }).join("")}</tr>`).join("") +
+    `<tr><td class="small muted">Range promised to hold the truth 90% of the time</td>${["1","2","4"].map(h => `<td class="n small muted">held ${pct(H[h].interval.coverage,1)}</td>`).join("")}</tr>` +
+    `<tr><td class="small muted">Hospital-weeks scored</td>${["1","2","4"].map(h => `<td class="n small muted">${num(H[h].n_rows)}</td>`).join("")}</tr>`;
+  const raw = h1.trusted_vs_raw_model;
+  $("#fc-not").innerHTML = `
+    <li>One week ahead the improvement is small: ${Math.abs(d1.diff_points).toFixed(2)} points (95% range ${Math.abs(d1.ci95_points[1]).toFixed(2)}–${Math.abs(d1.ci95_points[0]).toFixed(2)}). Four weeks ahead, a plain 4-week average does better than our model.</li>
+    <li>Removing untrusted reports did <b>not</b> make forecasts more accurate on average (it was ${raw.diff_points.toFixed(2)} points worse). Bad reports are rare; their harm shows up in decisions when they are large — see Question 3.</li>
+    <li>Forecasts are for whole-hospital weekly occupancy, not for a ward, a specialty or a day.</li>`;
+  const sel = $("#fc-pick");
+  sel.innerHTML = fc.examples.map((e,i) => `<option value="${i}">${esc(e.hospital)} (${esc(e.state)}, ${num(e.beds)} beds)</option>`).join("");
+  const draw = () => {
+    const e = fc.examples[+sel.value];
+    const P = k => e.series.map(s => [new Date(s.week), s[k]]);
+    $("#fc-chart").innerHTML = lineChart([
+      {points: P("actual"), color: css("--chart1"), width: 2.2},
+      {points: P("pred"), color: css("--chart2"), width: 1.8}],
+      {h: 250, bands: [{color: css("--band"), points: e.series.map(s => [new Date(s.week), s.lo, s.hi])}],
+       yfmt: v => (100*v).toFixed(0)+"%", hline: 0.9});
+  };
+  sel.onchange = draw; draw();
+}
+
+// ---------------------------------------------------------------- COORDINATION
+async function renderCoord(){
+  const [r3, idx] = await Promise.all([get("rq3_coordination.json"), get("index.json")]);
+  const A = r3.arms, prm = r3.params;
+  $("#co-answer").textContent = `Yes, a lot of it. In 2023–2024, about ${pct(A.mahros.share_of_overload_absorbed,0)} of the patient-days hospitals spent above ${pct(prm.theta,0)} full could have been absorbed by hospitals within ${prm.radius_km} km that really had room the following week. Perfect foresight would reach ${pct(A.oracle.share_of_overload_absorbed,0)}.`;
+  const arms = [["none","No coordination"],["greedy","Simple rule: nearest hospital with room"],["persistence","Optimised, using “next week = this week”"],["no_trust","Optimised, believing every report"],["mahros","MAHROS (forecast + Data Steward + optimiser)"],["oracle","Ceiling: perfect knowledge of next week"]];
+  $("#co-arms").innerHTML = hbars(arms.map(([k,t]) => ({label: t, value: A[k].share_of_overload_absorbed, color: k === "mahros" ? css("--chart1") : k === "oracle" ? css("--chart3") : css("--chart2")})), {max: Math.max(A.oracle.share_of_overload_absorbed, 0.01)});
+  const c = r3.comparisons;
+  $("#co-arms-note").innerHTML = `Honest reading: almost all of the gain comes from coordinating at all. On real data, the optimiser, the forecaster and the trust checks each change the result by about a percentage point (MAHROS minus simple rule: ${num(c.mahros_vs_greedy.mean_weekly_diff_patient_days)} patient-days a week; minus "next week = this week": ${num(c.mahros_vs_persistence.mean_weekly_diff_patient_days)}). Scored over ${A.mahros.weeks} weeks; ${num(A.mahros.overload_patient_days)} patient-days were above the safe level in total.`;
+  // planted
+  const pe = r3.planted_errors || {};
+  $("#co-planted").innerHTML = `<tr><th>Reports with a planted mistake</th><th class="n">MAHROS absorbs</th><th class="n">Believing every report absorbs</th><th class="n">Wrongly planned onto full hospitals*</th></tr>` +
+    Object.entries(pe).map(([rate, v]) => `<tr><td>${pct(+rate,0)} (${num(v.reports_corrupted)} reports)</td><td class="n">${pct(v.arms.mahros.share_of_overload_absorbed,1)}</td><td class="n">${pct(v.arms.no_trust.share_of_overload_absorbed,1)}</td><td class="n">${num(v.arms.mahros.overfill_if_unchecked_patient_days)} vs ${num(v.arms.no_trust.overfill_if_unchecked_patient_days)}</td></tr>`).join("");
+  $("#co-planted-note").textContent = "* Patient-days the plan would have pushed into hospitals above the safe level had nobody checked (MAHROS vs believing every report). Hospital agents decline these, which is why they never become real transfers.";
+  $("#co-sens").innerHTML = `<tr><th>Change one assumption</th><th class="n">MAHROS absorbs</th><th class="n">Ceiling</th></tr>` +
+    `<tr><td><b>As used: ${pct(prm.theta,0)} safe level, ${prm.radius_km} km, ${pct(prm.kappa,0)} per week</b></td><td class="n"><b>${pct(A.mahros.share_of_overload_absorbed,1)}</b></td><td class="n">${pct(A.oracle.share_of_overload_absorbed,1)}</td></tr>` +
+    Object.entries(r3.sensitivity).map(([k,v]) => `<tr><td>${esc(k.replace("theta","safe level").replace("kappa","weekly cap").replace("radius","radius"))}</td><td class="n">${pct(v.mahros_share,1)}</td><td class="n">${pct(v.oracle_share,1)}</td></tr>`).join("");
+  // by state
+  const bs = r3.by_state || {}, M = bs.mahros || {}, O = bs.oracle || {};
+  const st = Object.entries(M).filter(([,v]) => v.overload_patient_days > 0).sort((a,b) => b[1].overload_patient_days - a[1].overload_patient_days).slice(0, 12);
+  $("#co-states").innerHTML = `<tr><th>State</th><th class="n">Patient-days above safe level</th><th class="n">MAHROS absorbs</th><th class="n">Ceiling</th></tr>` +
+    st.map(([k,v]) => `<tr><td>${esc(k)}</td><td class="n">${num(v.overload_patient_days)}</td><td class="n">${pct(v.share_absorbed,0)}</td><td class="n">${pct((O[k]||{}).share_absorbed,0)}</td></tr>`).join("");
+  try {
+    const hc = await get("houston_case_study.json"), g = hc.geometry, pl = hc.plans;
+    $("#co-houston").innerHTML = `<p style="margin:0">For ${hc.hospitals_matched} Houston hospitals we have real driving times. Straight-line distance and driving time agree closely (correlation ${g.corr_straight_vs_drive.toFixed(2)}; roads are a median ${g.road_over_straight_median.toFixed(2)}× longer).</p>
+      <p style="margin:8px 0 0">Re-planning all ${hc.weeks} weeks with a <b>60-minute drive</b> instead of <b>80 km straight line</b>: absorbed ${pct(pl.drive_60min.share_absorbed,1)} vs ${pct(pl.straight_80km.share_absorbed,1)}, and ${pct(hc.weighted_overlap_of_transfers,0)} of the transfers are the same.</p>
+      <p class="muted" style="margin:8px 0 0">Houston itself absorbs far less than the national average: its hospitals are often all full at the same time.</p>`;
+  } catch (e) { $("#co-houston").textContent = "Houston case study not built."; }
+  // explorer
+  const wsel = $("#co-week"), ssel = $("#co-state");
+  if (!wsel.options.length){
+    wsel.innerHTML = idx.weeks.map(w => `<option value="${w.week}">${esc(w.label)} — ${w.week}</option>`).join("");
+    const pref = ["TX","CA","NY","FL","AZ"].find(s => idx.states.includes(s)) || idx.states[0];
+    ssel.innerHTML = idx.states.map(s => `<option ${s===pref?"selected":""}>${s}</option>`).join("");
+    wsel.onchange = ssel.onchange = drawWeek;
+  }
+  drawWeek();
+}
+async function drawWeek(){
+  const wk = $("#co-week").value, st = $("#co-state").value;
+  const run = (await get(`run_${wk}.json`))[st];
+  if (!run){ $("#co-map").innerHTML = "<p class='muted'>No hospitals in this state.</p>"; return; }
+  const T = run.totals;
+  $("#co-totals").innerHTML = [
+    ["Hospitals", num(T.hospitals), `${num(T.red_reports)} RED, ${num(T.missing_reports)} missing`],
+    ["Patient-days above safe level", num(T.overload_patient_days), "next week, trusted reports"],
+    ["Proposed to move", num(T.planned_patient_days), "patient-days"],
+    ["Actually possible", num(T.moved_patient_days), T.share_absorbed == null ? "nothing to absorb" : pct(T.share_absorbed,0) + " of the excess"],
+  ].map(([k,v,s]) => `<div class="card"><div class="small muted">${k}</div><div class="big" style="font-size:24px">${v}</div><div class="small muted">${s}</div></div>`).join("");
+  // map
+  const hs = run.hospitals.filter(h => h.lat != null && h.lon != null);
+  const W = 520, Hh = 420, pad = 18;
+  const lats = hs.map(h => h.lat), lons = hs.map(h => h.lon);
+  const midLat = (Math.min(...lats) + Math.max(...lats)) / 2, kx = Math.cos(midLat*Math.PI/180);
+  const x0 = Math.min(...lons)*kx, x1 = Math.max(...lons)*kx, y0 = Math.min(...lats), y1 = Math.max(...lats);
+  const sc = Math.min((W-2*pad)/((x1-x0)||1), (Hh-2*pad)/((y1-y0)||1));
+  const P = h => [pad + (h.lon*kx - x0)*sc, Hh - pad - (h.lat - y0)*sc];
+  const byId = Object.fromEntries(hs.map(h => [h.id, h]));
+  let s = svgEl(W, Hh) + `<rect x="0" y="0" width="${W}" height="${Hh}" rx="8" fill="${css('--bg')}"/>`;
+  run.proposals.forEach(p => { const a = byId[p.from], b = byId[p.to]; if(!a||!b) return; const [ax,ay] = P(a), [bx,by] = P(b);
+    const done = p.executed > 0.01;
+    s += `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="${done ? css('--accent') : css('--grey')}" stroke-width="${done ? 1.2 + Math.min(4, p.executed/3) : 1}" ${done ? "" : 'stroke-dasharray="3 3"'} opacity=".8"><title>${esc(p.from_name)} → ${esc(p.to_name)}: ${p.executed.toFixed(1)} of ${p.patients_per_day.toFixed(1)} patients/day</title></line>`; });
+  hs.forEach(h => { const [x,y] = P(h); const trusted = h.level === "GREEN" || h.level === "AMBER";
+    const col = !trusted ? css('--grey') : (h.forecast != null && h.forecast > 0.9) ? css('--red') : css('--green');
+    const r = 3 + Math.sqrt(h.beds || 20) / 4;
+    s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}" fill-opacity="${trusted ? .85 : .35}" stroke="${css('--panel')}" stroke-width="1"><title>${esc(h.name)} (${esc(h.city)}) — ${h.level}; now ${pct(h.occupancy_now,0)}, forecast ${pct(h.forecast,0)}${h.reasons.length ? "; " + esc(h.reasons.map(r=>r.title).join(", ")) : ""}</title></circle>`; });
+  $("#co-map").innerHTML = s + "</svg>";
+  const resp = {}; run.responses.forEach(r => { (resp[r.hospital] = resp[r.hospital] || []).push(r); });
+  const props = run.proposals.slice().sort((a,b) => b.patients_per_day - a.patients_per_day);
+  $("#co-props").innerHTML = props.length ? props.slice(0, 60).map(p => {
+    const sr = (resp[p.from]||[]).find(r => r.role === "send"), rr = (resp[p.to]||[]).find(r => r.role === "receive");
+    const verdict = p.executed > 0.01 ? `<span class="pill GREEN">${p.executed.toFixed(1)} moved</span>` : `<span class="pill MISSING">not possible</span>`;
+    return `<div class="prop"><b>${esc(p.from_name)}</b> → <b>${esc(p.to_name)}</b> · ${p.patients_per_day.toFixed(1)} patients/day proposed · ${verdict}
+      <div class="small muted">${esc(p.why)}</div>
+      ${sr ? `<div class="small">Sender: ${esc(sr.why)}.</div>` : ""}${rr ? `<div class="small">Receiver: ${esc(rr.why)}.</div>` : ""}</div>`; }).join("") +
+    (props.length > 60 ? `<p class="small muted">…and ${props.length-60} more.</p>` : "")
+    : "<p class='muted'>No hospital was forecast to be above the safe level with room nearby — nothing to propose.</p>";
+}
+
+// ---------------------------------------------------------------- AUDIT
+async function renderAudit(data){
+  const d = data || await (await fetch("/api/ledger")).json();
+  const v = d.verify;
+  $("#au-status").innerHTML = v.ok
+    ? `<p class="ok" style="margin:0">✓ Chain verified: ${num(v.blocks)} blocks, ${num(v.entries)} entries.</p>
+       <p style="margin:6px 0 0">${d.rebuilt_matches_published ? "Rebuilt from the raw entries on this computer, it lands on exactly the fingerprint published with the results:" : "Rebuilt fingerprint:"}</p><p class="hash" style="margin:4px 0 0">${esc(v.head)}</p>`
+    : `<p class="bad" style="margin:0">✗ Verification failed at block ${v.first_bad_block} (${esc(v.label)}).</p>
+       ${d.tampered ? `<p style="margin:6px 0 0">Someone changed <b>${esc(d.tampered.hospital)}</b>'s reported patients in that block from ${d.tampered.before} to ${d.tampered.after}. Nothing else was touched — and the check still names exactly where.</p>` : ""}`;
+  $("#au-blocks").innerHTML = d.blocks.slice(-12).reverse().map(b => `<div class="prop"><b>#${b.index}</b> ${esc(b.label)} · ${num(b.entries)} entries<div class="hash muted">${esc(b.hash)}</div></div>`).join("");
+}
+$("#au-tamper").onclick = async () => {
+  // Tamper with a familiar, mid-chain block (a Texas week) so the demo is easy to follow.
+  const cur = await (await fetch("/api/ledger")).json();
+  const tx = cur.blocks.find(b => b.label.startsWith("TX ")) || cur.blocks[Math.floor(cur.blocks.length / 2)];
+  renderAudit(await (await fetch(`/api/ledger/tamper?block=${tx ? tx.index : 0}`, {method:"POST"})).json());
+};
+$("#au-reset").onclick = async () => renderAudit(await (await fetch("/api/ledger/reset", {method:"POST"})).json());
+
+// ---------------------------------------------------------------- boot
+const R = {overview: renderOverview, trust: renderTrust, forecast: renderForecast, coord: renderCoord, audit: renderAudit, limits: async () => {}};
+const done = new Set();
+async function render(tab){
+  if (done.has(tab) && tab !== "audit") return;
+  try { await R[tab](); done.add(tab); }
+  catch (e) { const el = document.getElementById(tab); el.insertAdjacentHTML("afterbegin", `<div class="not"><b>Could not load results</b>${esc(e.message)} — run <span class="kbd">python experiments/build_ui_data.py</span>.</div>`); }
+}
+renderOverview().then(() => done.add("overview")).catch(e => render("overview"));
+try { const t = localStorage.getItem("mahros-tab"); if (t && t !== "overview") document.querySelector(`nav button[data-tab="${t}"]`)?.click(); } catch(e) {}
+</script>
+</body>
+</html>

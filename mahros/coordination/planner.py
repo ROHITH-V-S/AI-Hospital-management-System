@@ -85,20 +85,28 @@ class Plan:
     distance_km: np.ndarray
 
 
-def _arcs(lat, lon, s_idx, r_idx, radius):
+def _arcs(lat, lon, s_idx, r_idx, radius, distance=None):
     if len(s_idx) == 0 or len(r_idx) == 0:
         return np.empty(0, int), np.empty(0, int), np.empty(0)
-    d = haversine_km(lat[s_idx][:, None], lon[s_idx][:, None],
-                     lat[r_idx][None, :], lon[r_idx][None, :])
+    if distance is None:
+        d = haversine_km(lat[s_idx][:, None], lon[s_idx][:, None],
+                         lat[r_idx][None, :], lon[r_idx][None, :])
+    else:
+        d = np.asarray(distance)[np.ix_(s_idx, r_idx)]
     si, rj = np.nonzero(d <= radius)
     return s_idx[si], r_idx[rj], d[si, rj]
 
 
-def solve_lp(lat, lon, cap, spare, prm: Params) -> Plan:
-    """Optimal transportation plan. Arrays are aligned per hospital."""
+def solve_lp(lat, lon, cap, spare, prm: Params, distance=None) -> Plan:
+    """Optimal transportation plan. Arrays are aligned per hospital.
+
+    ``distance`` optionally replaces straight-line km with any n x n matrix in
+    the same unit as ``prm.radius_km`` (the Houston case study passes routed
+    driving minutes and a radius in minutes).
+    """
     s_idx = np.nonzero(cap > 1e-9)[0]
     r_idx = np.nonzero(spare > 1e-9)[0]
-    s, r, d = _arcs(lat, lon, s_idx, r_idx, prm.radius_km)
+    s, r, d = _arcs(lat, lon, s_idx, r_idx, prm.radius_km, distance)
     if len(s) == 0:
         return Plan(*(np.empty(0, int),) * 2, np.empty(0), np.empty(0))
     n = len(s)
@@ -165,21 +173,27 @@ def execute(plan: Plan, used_next, beds_next, trusted_next, prm: Params) -> Exec
     if n == 0:
         z = np.empty(0)
         return Execution(z, z, z, np.empty(0, bool))
-    excess = np.maximum(0.0, used_next - prm.theta * beds_next)
-    room = np.maximum(0.0, prm.theta * beds_next - used_next)
+    # Same order as the agents (mahros.agents.platform): every sender decides
+    # first, knowing only its own situation; then every receiver decides on
+    # what is actually coming. A hospital whose own report is untrusted moves
+    # nothing on its own account. Pinned equal to the agent path by a test.
+    n = len(beds_next)
+    excess = np.nan_to_num(np.maximum(0.0, used_next - prm.theta * beds_next))
+    room = np.nan_to_num(np.maximum(0.0, prm.theta * beds_next - used_next))
     unver = ~(trusted_next[plan.senders] & trusted_next[plan.receivers])
-    amt = np.where(unver, 0.0, plan.amount)
 
-    planned_out = np.bincount(plan.senders, amt, minlength=len(beds_next))
-    f_send = np.ones(len(beds_next))
+    planned_out = np.bincount(plan.senders, plan.amount, minlength=n)
+    f_send = np.zeros(n)
     pos = planned_out > 0
-    f_send[pos] = np.minimum(1.0, np.nan_to_num(excess[pos]) / planned_out[pos])
-    after_send = amt * f_send[plan.senders]
+    f_send[pos] = np.minimum(1.0, excess[pos] / planned_out[pos])
+    f_send[~trusted_next] = 0.0
+    after_send = plan.amount * f_send[plan.senders]
 
-    planned_in = np.bincount(plan.receivers, after_send, minlength=len(beds_next))
-    f_recv = np.ones(len(beds_next))
+    planned_in = np.bincount(plan.receivers, after_send, minlength=n)
+    f_recv = np.zeros(n)
     pos = planned_in > 0
-    f_recv[pos] = np.minimum(1.0, np.nan_to_num(room[pos]) / planned_in[pos])
+    f_recv[pos] = np.minimum(1.0, room[pos] / planned_in[pos])
+    f_recv[~trusted_next] = 0.0
     executed = after_send * f_recv[plan.receivers]
     return Execution(executed, f_send[plan.senders], f_recv[plan.receivers], unver)
 

@@ -1,13 +1,8 @@
-# Runtime dependencies for the deployed live console ONLY.
+# Runtime dependencies for the deployed dashboard ONLY.
 #
-# Deliberately minimal: the simulation engine itself is pure standard library,
-# so a deployed instance needs nothing beyond the web server. numpy/pandas/
-# matplotlib are NOT here on purpose -- they are only used by the offline
-# experiment and plotting scripts, and adding them would triple the cold-start
-# time on a free instance for no benefit.
-#
-# Local development still uses pyproject.toml:  pip install -e ".[demo]"
+# The server reads precomputed files in results/ui/ and uses only the standard
+# library plus the web framework. The experiment stack (numpy, pandas, scipy,
+# scikit-learn, pyarrow) is NOT needed to serve the dashboard; install it with
+#   pip install -e ".[dev]"
 fastapi>=0.110
 uvicorn[standard]>=0.27
-typer>=0.12
-rich>=13.0

@@ -4,42 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mahros"
-version = "0.1.0"
-description = "Multi-Agent Hospital Resource Optimization System: decentralised inter-hospital transfer negotiation in which a hospital's refusal can be challenged with evidence and must be justified"
+version = "0.2.0"
+description = "Multi-Agent Hospital Resource Optimization System: trust-aware regional hospital load balancing, built and evaluated on real federal hospital capacity reports"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 
-# Deliberately minimal. The core simulation runs on the standard library alone;
-# these three are for the CLI and the plotting scripts. Everything else is optional.
+# What the experiments need. The dashboard server alone needs only `demo`.
 dependencies = [
-    "typer>=0.12",
-    "rich>=13.0",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "pyarrow>=14",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
 ]
 
 [project.optional-dependencies]
-# Live demo console: python -m mahros.server
 demo = ["fastapi>=0.110", "uvicorn[standard]>=0.27"]
-# Charts and results tables for the paper.
-analysis = ["numpy>=1.24", "pandas>=2.0", "matplotlib>=3.7"]
-# Microsoft Presidio for the privacy layer (falls back to the built-in tokenizer).
-privacy = ["presidio-analyzer>=2.2", "presidio-anonymizer>=2.2"]
-# On-chain audit against a local Hardhat/Anvil node (falls back to the hash chain).
-chain = ["web3>=6.0"]
-# Real asymmetric signatures for attested refusals. Without this the
-# attestation layer falls back to HMAC-SHA256, which models the protocol
-# faithfully but does NOT provide non-repudiation -- a shared secret means the
-# verifier could forge what it verifies. Install this to make the
-# non-repudiation claim real rather than modelled.
-attest = ["cryptography>=42.0"]
-# Cross-checking the hand-rolled statistics and the Hungarian solver against
-# reference implementations. Never required: mahros.eval is pure standard
-# library, and tests/test_argumentation.py skips these checks when absent.
-verify = ["scipy>=1.10"]
-dev = ["pytest>=7.0", "httpx>=0.27"]
-
-[project.scripts]
-mahros = "mahros.cli:app"
+dev = ["pytest>=7.0", "httpx>=0.27", "fastapi>=0.110"]
 
 [tool.setuptools.packages.find]
 include = ["mahros*"]
@@ -50,3 +32,4 @@ include = ["mahros*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
