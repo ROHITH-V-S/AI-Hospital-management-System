@@ -572,3 +572,16 @@ figures ("about 7 times") → computed from the results file. Unsupported
 wording ("shortages are mostly about people") softened.
 
 **Tests.** `tests/test_resources.py` (6).
+
+## 2026-10-11 — Step 17 (Phase 6, IN PROGRESS — session paused here)
+
+Done so far: Data trust tab (`static/datatrust.js`, `/api/trust`,
+`/api/trust/bids`); About rewritten (agents table, real vs simulated);
+Limits rewritten for v0.3; header subtitle; "This week" audit button now
+opens the Audit log; screenshots checked for Data trust, Audit, About.
+Fixes: About no longer calls the surge model an agent; narrow-screen
+overflow (grid columns `minmax(0,1fr)`) — **last phone-width screenshot not
+yet checked**. A bad scripted edit corrupted core.js; restored from git and
+redone by exact edits.
+
+**Next (see docs/STATUS.md):** finish Phase 6 checks, then Phase 7.

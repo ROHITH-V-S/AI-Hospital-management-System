@@ -84,6 +84,7 @@ async function renderOverview(){
   ];
   $("#ov-cards").innerHTML = cards.map(c => `<div class="card"><div class="small muted">${c.k}</div><div class="big">${c.big}</div><div class="small">${c.t}</div><p style="margin:10px 0 0"><button class="act" onclick="document.querySelector('nav button[data-tab=${c.tab}]').click()">See the evidence →</button></p></div>`).join("");
   const c = man.corrected, rw = man.raw || {};
+  document.querySelectorAll(".ov-nhosp").forEach(el => el.textContent = num(p.hospitals));
   $("#ov-data").innerHTML = `<table>
     <tr><th>Dataset</th><td><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.title)}</a> — ${esc(c.publisher)}, ${esc(c.licence)}</td></tr>
     <tr><th>Size</th><td>${num(c.rows)} weekly hospital reports (corrected) and ${num(rw.rows)} (raw, before government correction); ${num(p.hospitals)} general and critical-access hospitals analysed</td></tr>
@@ -493,13 +494,7 @@ async function renderLive(){
       try { const d = await lvApi(`inject?hospital_id=${encodeURIComponent($("#lv-hosp").value)}&mistake=${$("#lv-mistake").value}`, "POST"); lvPending(d.pending); }
       catch (e) { $("#lv-pending").textContent = e.message; }
     };
-    $("#lv-tamper").onclick = async () => {
-      try {
-        const d = await lvApi("tamper", "POST");
-        const id = String(d.hospital).replace("hospital:", "");
-        lvLedger(d.ledger, {...d, hospital: LV.names[id] || "A hospital"});
-      } catch (e) { $("#lv-ledger").innerHTML = `<p class="muted" style="margin:0">${esc(e.message)}</p>`; }
-    };
+    $("#lv-tamper").onclick = () => showTab("audit");
   }
   await lvLoadState(st);
   // Hands-free demo and screenshots: ?steps=8&inject=lost_digit

@@ -427,3 +427,51 @@ def resources_set(row_id: int, units: int):
         return JSONResponse(set_units(_db(), _book(), row_id, units))
     except ValueError as exc:
         raise HTTPException(400, str(exc))
+
+
+# --------------------------------------------------------------------------- #
+# Data trust: the Steward's verdicts this week, and the bids it checked
+# --------------------------------------------------------------------------- #
+
+@app.get("/api/trust")
+def trust_week(state: str = "AZ", week: str = "2023-11-19"):
+    import pandas as pd
+    from ..db.io import read_frame
+    from ..surge.store import _st
+    from ..trust import RULES
+    from .live import PLAIN_REASON, nice_name
+    try:
+        st, wk = _st(state), str(pd.Timestamp(week).date())
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    d = read_frame(_db(), f"""SELECT v.hospital_pk, v.level, v.reasons, h.name, h.city, r.used, r.beds
+        FROM trust_verdicts v JOIN hospitals h ON h.hospital_pk = v.hospital_pk
+        JOIN weekly_reports r ON r.hospital_pk = v.hospital_pk AND r.week = v.week
+        WHERE h.state = '{st}' AND v.week = '{wk}'
+        AND h.subtype IN ('Short Term', 'Critical Access Hospitals')""")
+    counts = {k: int((d["level"] == k).sum()) for k in ("GREEN", "AMBER", "RED", "MISSING")} if len(d) else {}
+    bad = []
+    for r in d[d["level"].isin(["RED", "AMBER"])].itertuples():
+        codes = [c for c in str(r.reasons or "").split(",") if c]
+        bad.append({"id": str(r.hospital_pk), "name": nice_name(r.name), "city": str(r.city or "").title(),
+                    "level": r.level, "used": None if r.used != r.used else r.used,
+                    "beds": None if r.beds != r.beds else r.beds,
+                    "why": [PLAIN_REASON.get(c, RULES[c].explain if c in RULES else c) for c in codes]})
+    bad.sort(key=lambda x: (x["level"] != "RED", x["name"]))
+    return JSONResponse({"state": st, "week": wk, "counts": counts, "flagged": bad})
+
+
+@app.get("/api/trust/bids")
+def trust_bids(limit: int = 20):
+    from ..db.io import read_frame
+    from .live import nice_name
+    n = max(1, min(int(limit), 100))
+    d = read_frame(_db(), f"""SELECT b.id, b.request_id, b.hospital_pk, h.name, b.steward_note, t.sim_time, t.state
+        FROM bids b JOIN hospitals h ON h.hospital_pk = b.hospital_pk
+        JOIN transfer_requests t ON t.id = b.request_id
+        WHERE b.steward_flag ORDER BY b.id DESC LIMIT {n}""") if DB.dialect.name == "postgresql" else         read_frame(_db(), f"""SELECT b.id, b.request_id, b.hospital_pk, h.name, b.steward_note, t.sim_time, t.state
+        FROM bids b JOIN hospitals h ON h.hospital_pk = b.hospital_pk
+        JOIN transfer_requests t ON t.id = b.request_id
+        WHERE b.steward_flag = 1 ORDER BY b.id DESC LIMIT {n}""")
+    return JSONResponse([{"bid": int(r.id), "request": int(r.request_id), "name": nice_name(r.name),
+                          "note": r.steward_note, "at": r.sim_time, "state": r.state} for r in d.itertuples()])

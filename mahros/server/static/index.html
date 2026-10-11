@@ -98,7 +98,7 @@ svg text{fill:var(--muted);font-size:11px;font-family:inherit}
 .g5{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 .kpi .big{font-size:26px}
 .livegrid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;margin-top:14px}
-@media (max-width:860px){.livegrid{grid-template-columns:1fr}}
+@media (max-width:860px){.livegrid{grid-template-columns:minmax(0,1fr)}}
 .feed{max-height:560px;overflow:auto;scroll-behavior:smooth}
 .ev{border-left:4px solid var(--line);padding:6px 10px;margin:0 0 6px;border-radius:0 8px 8px 0;background:var(--bg);font-size:13.5px;animation:pop .25s ease-out}
 .ev .tag{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:1px}
@@ -133,7 +133,7 @@ svg text{fill:var(--muted);font-size:11px;font-family:inherit}
 .maphead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 #lv-map text.lbl{fill:var(--ink);font-size:12px;font-weight:600;paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
 .livegrid{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}
-@media (max-width:860px){.livegrid{grid-template-columns:1fr}}
+@media (max-width:860px){.livegrid{grid-template-columns:minmax(0,1fr)}}
 /* ---------- v0.3 ---------- */
 .subnav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
 .subnav button{font:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:6px 12px;cursor:pointer}
@@ -150,6 +150,8 @@ svg text{fill:var(--muted);font-size:11px;font-family:inherit}
 .form{display:grid;gap:10px;margin:10px 0}
 .form label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:3px}
 .form select{width:100%}
+.form{grid-template-columns:minmax(0,1fr)}
+select{max-width:100%}
 .pick{border:2px dashed var(--line);border-radius:10px;padding:10px 12px;font-size:14.5px}
 .pick.set{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
 button.big{font-size:16px;padding:10px 16px;font-weight:650}
@@ -171,7 +173,7 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
   <div class="wrap">
     <div class="top">
       <h1>MAHROS</h1>
-      <span class="sub">Multi-Agent Hospital Resource Optimization System · built on real federal reports from US hospitals, 2020–2024</span>
+      <span class="sub">Multi-Agent Hospital Resource Optimization System · a working prototype of a state hospital-coordination service, built on real US hospital reports (2020–2024)</span>
     </div>
     <nav role="tablist" id="mainnav">
       <button data-tab="emergency" aria-selected="true">🚑 Emergency</button>
@@ -258,8 +260,9 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
       <div id="lv-pending" class="small"></div></div>
     <div class="card"><h3>Weeks so far</h3><div id="lv-hist" class="small muted">Each finished week appears here.</div>
       <div class="legend"><span><i style="background:var(--red)"></i>Patients in too-full hospitals</span><span><i style="background:var(--accent)"></i>Could be moved</span></div></div>
-    <div class="card"><h3>Audit log</h3><div id="lv-ledger" class="small">Nothing recorded yet.</div>
-      <div class="controls" style="margin-top:10px"><button class="act" id="lv-tamper">Try to secretly change a past report</button></div></div>
+    <div class="card"><h3>Record book</h3><div id="lv-ledger" class="small">Nothing recorded yet.</div>
+      <p class="small muted" style="margin:6px 0 0">Every week you run here is also written into the database record book, page by page.</p>
+      <div class="controls" style="margin-top:10px"><button class="act" id="lv-tamper">Open the audit log</button></div></div>
   </div>
 
   <details class="card" style="margin-top:14px"><summary class="small"><b>For experts:</b> every message the agents sent this week</summary>
@@ -272,6 +275,7 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
       <li>"Patients" means the average number of patients during the week.</li>
     </ul>
   </div>
+  <div class="prov">Reports <span class="tag observed">observed</span> (HHS weekly) · verdicts, forecasts, plans <span class="tag derived">derived</span> (MAHROS agents) · hospitals' answers use their real next-week report <span class="tag observed">observed</span></div>
   </div>
 </section>
 
@@ -288,23 +292,30 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
 <section class="tab" id="overview">
   <div class="qa">
     <div class="q">What is this?</div>
-    <div class="a">A platform a state health department could run: every week it checks which hospital reports can be believed, predicts which hospitals will be too full, and proposes moving patients to nearby hospitals with room. Each hospital decides for itself whether to accept.</div>
+    <div class="a">A working prototype of the coordination service a state health department could run. In an emergency it finds a patient a bed by asking every capable hospital at once. Every week it checks which hospital reports can be believed, warns where hospitals are about to fill up, and plans where patients, nurses and equipment should go. Every request, answer and decision is written into a record book that cannot be quietly changed.</div>
   </div>
 
-  <h2>How one week works — five agents, one record</h2>
-  <div class="flow">
-    <div class="step"><div class="num">STEP 1</div><div class="who">Hospital agents</div><div class="small muted">Each hospital submits its numbers: beds, patients, ICU.</div></div>
-    <div class="arrow">→</div>
-    <div class="step"><div class="num">STEP 2</div><div class="who">Data Steward</div><div class="small muted">Marks every report <span class="pill GREEN">GREEN</span> <span class="pill AMBER">AMBER</span> <span class="pill RED">RED</span> and says why.</div></div>
-    <div class="arrow">→</div>
-    <div class="step"><div class="num">STEP 3</div><div class="who">Forecaster</div><div class="small muted">Predicts next week's occupancy, with a 90% range.</div></div>
-    <div class="arrow">→</div>
-    <div class="step"><div class="num">STEP 4</div><div class="who">State coordinator</div><div class="small muted">Proposes transfers from too-full to nearby hospitals with room.</div></div>
-    <div class="arrow">→</div>
-    <div class="step"><div class="num">STEP 5</div><div class="who">Hospitals decide</div><div class="small muted">Accept only what their real numbers allow. Everything is sealed in the audit log.</div></div>
-  </div>
+  <h2>Who the agents are</h2>
+  <div class="card"><table>
+    <tr><th>Agent</th><th>How many</th><th>What it knows</th><th>What it decides</th></tr>
+    <tr><td><b>Hospital agent</b></td><td>one per hospital</td><td>Only its own private state: beds in use, nurses on shift, ventilators, cath-lab rooms, its own policy of beds kept back</td><td>Whether to bid for an emergency patient (and why not, if it declines); whether to accept a weekly transfer</td></tr>
+    <tr><td><b>Data Steward</b></td><td>one</td><td>Every hospital's weekly reports and its history</td><td>Which reports to set aside, with the rule that fired; which emergency bids must be confirmed by phone</td></tr>
+    <tr><td><b>Forecaster</b></td><td>one</td><td>Trusted reports up to this week</td><td>Next week's occupancy for each hospital, with a 90% range</td></tr>
+    <tr><td><b>Emergency coordinator</b></td><td>one per state</td><td>Public facts only: locations, road times, CMS capability, weekly reports</td><td>Who to ask, which bid wins (time to definitive care first)</td></tr>
+    <tr><td><b>Regional coordinator</b></td><td>one per state</td><td>Forecasts, verdicts, staff estimates, equipment inventory</td><td>The weekly patient plan — suggestions only. The nurse and equipment plan is computed alongside it with the same kind of optimiser.</td></tr>
+  </table>
+  <p class="small muted" style="margin:8px 0 0">No agent can read another's private state. They talk only through messages, and the messages of every emergency case and every weekly cycle go into the record book. The surge early warning is a model run on the same reports, not a separate agent.</p></div>
 
-  <h2>The three findings</h2>
+  <h2>What is real and what is simulated</h2>
+  <div class="card"><table>
+    <tr><th>Part</th><th>Data</th></tr>
+    <tr><td>Data trust, forecasting, weekly planning, surge warning</td><td><span class="tag observed">observed</span> real weekly reports from <span class="ov-nhosp">…</span> US hospitals (HHS), 2020–2024</td></tr>
+    <tr><td>Emergency transfer</td><td><span class="tag observed">observed</span> real hospitals, CMS capability, OSRM road times, weekly reports and ED visits · <span class="tag simulated">simulated</span> minute-by-minute beds and the patients</td></tr>
+    <tr><td>Staff per hospital</td><td><span class="tag estimated">estimated</span> from usual staffed beds and published nurse ratios; checked in direction against real state shortage reports</td></tr>
+    <tr><td>Equipment</td><td><span class="tag entered">entered</span> an inventory the state types in (seeded with estimates)</td></tr>
+  </table></div>
+
+  <h2>The findings</h2>
   <div class="grid g3" id="ov-cards"></div>
 
   <h2>Where the data comes from</h2>
@@ -312,9 +323,10 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
 
   <div class="not"><b>What MAHROS does not do</b>
     <ul>
-      <li>It does not move real patients. Every transfer here is a proposal tested against what hospitals reported the following week.</li>
-      <li>It does not see individual patients — only weekly hospital totals. No patient data is used anywhere.</li>
-      <li>It does not override hospitals. A proposal becomes a transfer only if both hospitals' real numbers allow it.</li>
+      <li>It is not deployed and moves no real patients. Emergency timings come from a simulation grounded in real data; weekly plans are scored against what hospitals really reported next.</li>
+      <li>It does not see individual patients — only hospital totals. No patient data is used anywhere.</li>
+      <li>It does not override hospitals. Every transfer needs the receiving hospital's own yes.</li>
+      <li>It does not predict pandemics. The early warning is about hospital capacity, from hospital reports.</li>
     </ul>
   </div>
 </section>
@@ -486,16 +498,19 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
 <section class="tab" id="limits">
   <div class="qa">
     <div class="q">What should a careful reader keep in mind?</div>
-    <div class="a">The data is real and official, but it is weekly, self-reported and ends in April 2024. The transfers are proposals, scored against what really happened next — not transfers that took place.</div>
+    <div class="a">The weekly data is real and official, but self-reported and ends in April 2024. Emergency timings are a simulation grounded in that data. Staff numbers are estimates and equipment is entered. Nothing here moved a real patient.</div>
   </div>
   <div class="card"><table>
     <tr><th>Limit</th><th>Why it matters</th><th>What we did about it</th></tr>
-    <tr><td>Weekly averages, not daily or hourly</td><td>Within-week peaks are invisible.</td><td>The platform is framed as weekly planning, as state coordination centres did during COVID-19 — not real-time bed assignment.</td></tr>
-    <tr><td>Self-reported data</td><td>Reports can be wrong.</td><td>That is Question 1: errors are measured, flagged and excluded, and the effect of planted errors on decisions is tested.</td></tr>
-    <tr><td>Data ends 2024-04-21</td><td>The federal mandate lapsed; later public data is state-level only.</td><td>Stated. The method needs only the 12 bed fields hospitals must again report to NHSN since Nov 2024.</td></tr>
-    <tr><td>No record of actual transfers</td><td>We cannot see who really sent patients where.</td><td>Proposals are scored against the next week's real reports, and hospitals accept only what those reports allow.</td></tr>
-    <tr><td>Bed totals, not specialties</td><td>An ICU patient cannot go to any free bed.</td><td>Stated as the main reason real absorption would be lower.</td></tr>
-    <tr><td>Straight-line distance</td><td>Roads are longer than lines.</td><td>Checked against real driving times for 27 Houston hospitals.</td></tr>
+    <tr><td>Weekly averages, ending 2024-04-21</td><td>Within-week peaks are invisible; facility-level public data stopped when the federal mandate lapsed.</td><td>Weekly planning and warning stay weekly. Minute-level emergency dynamics are simulated, starting from each hospital's real report, and labelled as such.</td></tr>
+    <tr><td>Self-reported data</td><td>Reports can be wrong.</td><td>The Data Steward flags them; errors are measured nationally and their effect on decisions tested (Evidence → 1, 3).</td></tr>
+    <tr><td>No public record of real transfers</td><td>We cannot compare against what really happened to patients.</td><td>Weekly proposals are scored against next week's real reports; emergency results are reported as ranges over swept assumptions.</td></tr>
+    <tr><td>Bed totals, not specialties</td><td>An ICU patient cannot go to any free bed.</td><td>Emergency capability comes from CMS Provider of Services codes (observed, Q3 2022); weekly absorption is an upper estimate.</td></tr>
+    <tr><td>Staff per hospital not public</td><td>Shortages cannot be measured per hospital.</td><td>Estimated from staffed beds and Title 22 ratios; agreement with real state shortage reports is weak and stated (Evidence → 6).</td></tr>
+    <tr><td>Equipment not public</td><td>No real inventory.</td><td>An entered inventory, seeded with labelled estimates; no research claim rests on it.</td></tr>
+    <tr><td>ED visits optional from 2023-06-11</td><td>Many hospitals stopped sending them.</td><td>The surge warning works without them (tested); emergency request rates use each hospital's own last reported volume, labelled.</td></tr>
+    <tr><td>Road times are free-flow</td><td>No traffic, no ambulance availability.</td><td>OSRM over OpenStreetMap; the same for every method compared.</td></tr>
+    <tr><td>Phone-call timing</td><td>Only one old published study of calls per transfer.</td><td>Call length swept 5–15 minutes; results always shown as a range.</td></tr>
   </table></div>
 </section>
 
@@ -508,6 +523,7 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
 <script src="/static/evidence.js"></script>
 <script src="/static/warning.js"></script>
 <script src="/static/resources.js"></script>
+<script src="/static/datatrust.js"></script>
 <script src="/static/boot.js"></script>
 </body>
 </html>
