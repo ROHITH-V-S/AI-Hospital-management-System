@@ -112,6 +112,28 @@ svg text{fill:var(--muted);font-size:11px;font-family:inherit}
 .controls select{max-width:100%;min-width:0}
 #lv-hosp,#lv-mistake{width:100%}
 .empty{color:var(--muted);text-align:center;padding:40px 10px}
+/* ---------- live steps ---------- */
+.stepper{list-style:none;display:flex;gap:6px;padding:0;margin:0 0 14px;flex-wrap:wrap}
+.stepper li{flex:1 1 140px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--muted)}
+.stepper li b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.stepper li.active{border:2px solid var(--accent);background:var(--accent-soft);color:var(--ink)}
+.stepper li.done{color:var(--ink)} .stepper li.done b::after{content:" ✓";color:var(--green)}
+.stage{min-height:420px}
+.stage .who{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.stage h2{font-size:22px;margin:4px 0 8px}
+.stage .cap{font-size:16px;line-height:1.5;margin:0 0 14px}
+.nums{display:flex;flex-wrap:wrap;gap:22px;margin:0 0 12px}
+.nums .v{font-size:30px;font-weight:700;line-height:1.1}
+.nums .l{font-size:12.5px;color:var(--muted)}
+.item{border-left:4px solid var(--line);background:var(--bg);border-radius:0 8px 8px 0;padding:7px 10px;margin:6px 0;font-size:14px}
+.item:hover{outline:1px solid var(--line)}
+.story{background:var(--accent-soft);border-radius:10px;padding:12px 14px;margin:6px 0 10px;font-size:14.5px;line-height:1.5}
+.story b.k{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.bdg{display:inline-block;min-width:19px;height:19px;border-radius:50%;background:var(--ink);color:var(--panel);font-size:11.5px;font-weight:700;text-align:center;line-height:19px;margin-right:6px;vertical-align:1px}
+.maphead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+#lv-map text.lbl{fill:var(--ink);font-size:12px;font-weight:600;paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.livegrid{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}
+@media (max-width:860px){.livegrid{grid-template-columns:1fr}}
 footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding:16px 0}
 @media (max-width:600px){.qa .a{font-size:16px}.big{font-size:24px}}
 </style>
@@ -144,43 +166,46 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
   <div class="card livebar">
     <div class="ctl">
       <label class="small muted" for="lv-state">State</label><select id="lv-state"></select>
-      <label class="small muted" for="lv-start">Start at</label><select id="lv-start"></select>
-      <button class="act primary" id="lv-play">▶ Play</button>
-      <button class="act" id="lv-next">⏭ One week</button>
+      <label class="small muted" for="lv-start">Week</label><select id="lv-start"></select>
+      <button class="act primary" id="lv-next">Next step ›</button>
+      <button class="act" id="lv-play">▶ Auto-play</button>
       <button class="act" id="lv-restart">↺ Restart</button>
       <label class="small muted" for="lv-speed">Speed</label>
-      <select id="lv-speed"><option value="1100">Slow</option><option value="450" selected>Normal</option><option value="120">Fast</option><option value="0">Instant</option></select>
+      <select id="lv-speed"><option value="7000">Slow</option><option value="4000" selected>Normal</option><option value="1800">Fast</option></select>
     </div>
-    <div class="ctl"><div><div class="weekbig" id="lv-week">Press ▶ Play</div><div class="small muted" id="lv-sub">Real reports from real hospitals, replayed one week at a time</div></div>
-      <span class="chip ok" id="lv-chip">🔒 Log: empty</span></div>
+    <span class="chip ok" id="lv-chip">🔒 Audit log: empty</span>
   </div>
 
-  <div class="grid g5" id="lv-kpis"></div>
+  <ol class="stepper" id="lv-steps"></ol>
 
   <div class="livegrid">
-    <div class="card"><h3 id="lv-map-title">Hospitals</h3><div id="lv-map"><div class="empty">Loading…</div></div>
-      <div class="legend"><span><i class="dot" style="background:var(--green)"></i>Has room (&lt;80%)</span><span><i class="dot" style="background:var(--amber)"></i>Busy (80–90%)</span><span><i class="dot" style="background:var(--red)"></i>Above safe level (&gt;90%)</span><span><i class="dot" style="background:transparent;border:2px dashed var(--grey)"></i>Report not trusted</span><span><i style="background:var(--c-coord)"></i>Proposed</span><span><i style="background:var(--accent)"></i>Moved</span></div></div>
-    <div class="card"><h3>What the agents are saying <span class="small muted" style="font-weight:400">· newest first</span></h3><div class="feed" id="lv-feed"><div class="empty">Press ▶ Play to start the week.</div></div></div>
+    <div class="card stage" id="lv-stage"></div>
+    <div class="card"><div class="maphead"><h3 id="lv-map-title">Hospitals</h3><span class="small muted" id="lv-map-mode"></span></div>
+      <div id="lv-map"><div class="empty">Loading…</div></div>
+      <div class="legend" id="lv-legend"></div></div>
   </div>
 
   <div class="grid g3" style="margin-top:14px">
-    <div class="card"><h3>Inject a mistake</h3>
-      <p class="small muted" style="margin:0 0 8px">Put a typo into one hospital's next report and watch whether the Data Steward catches it. Try an <b>almost-full</b> hospital with <b>"Digit missing"</b>: its report will say it is nearly empty.</p>
+    <div class="card"><h3>Try it: add a mistake</h3>
+      <p class="small muted" style="margin:0 0 8px">Make one hospital send a wrong number next week and see if the Data Steward catches it. Best demo: an <b>almost-full</b> hospital with <b>"Digit missing"</b> — its report will say it is nearly empty.</p>
       <div class="controls" style="flex-direction:column;align-items:stretch">
         <select id="lv-hosp"></select><select id="lv-mistake"></select>
-        <button class="act" id="lv-inject">Put it in next week's report</button></div>
+        <button class="act" id="lv-inject">Add it to next week's report</button></div>
       <div id="lv-pending" class="small"></div></div>
-    <div class="card"><h3>Week by week</h3><div id="lv-hist" class="small muted">Weeks you play appear here.</div>
-      <div class="legend"><span><i style="background:var(--red)"></i>Patients above safe level</span><span><i style="background:var(--accent)"></i>Moved to hospitals with room</span></div></div>
+    <div class="card"><h3>Weeks so far</h3><div id="lv-hist" class="small muted">Each finished week appears here.</div>
+      <div class="legend"><span><i style="background:var(--red)"></i>Patients in too-full hospitals</span><span><i style="background:var(--accent)"></i>Could be moved</span></div></div>
     <div class="card"><h3>Audit log</h3><div id="lv-ledger" class="small">Nothing recorded yet.</div>
-      <div class="controls" style="margin-top:10px"><button class="act" id="lv-tamper">Secretly change a past report</button></div></div>
+      <div class="controls" style="margin-top:10px"><button class="act" id="lv-tamper">Try to secretly change a past report</button></div></div>
   </div>
+
+  <details class="card" style="margin-top:14px"><summary class="small"><b>For experts:</b> every message the agents sent this week</summary>
+    <div class="feed" id="lv-feed" style="margin-top:10px"><div class="empty">Nothing yet.</div></div></details>
 
   <div class="not"><b>What you are watching</b>
     <ul>
-      <li>Every hospital, bed count and patient count is the real report that hospital sent the U.S. government that week. The agents are replaying it.</li>
-      <li>Transfers are <b>proposals</b>. "Moved" means the receiving hospital's real report the next week shows it had the room. No real patient was moved.</li>
-      <li>"Patients" means the average number of patients over the week.</li>
+      <li>Every dot is a real hospital, and every number is the real report it sent the U.S. government that week. The agents are replaying those weeks.</li>
+      <li>Moves are <b>suggestions</b>, checked against what the hospitals really reported the following week. No real patient was moved.</li>
+      <li>"Patients" means the average number of patients during the week.</li>
     </ul>
   </div>
   </div>
@@ -627,12 +652,16 @@ $("#au-tamper").onclick = async () => {
 $("#au-reset").onclick = async () => renderAudit(await (await fetch("/api/ledger/reset", {method:"POST"})).json());
 
 // ---------------------------------------------------------------- LIVE
-const LV = {playing: false, running: false, speed: 450, pos: {}, setup: false};
-const AGENT = {
-  hospital: ["Hospital agents", "--c-hosp"], inject: ["Mistake injected", "--red"],
-  steward: ["Data Steward", "--c-stew"], forecaster: ["Forecaster", "--c-fore"],
-  coordinator: ["State coordinator", "--c-coord"], clock: ["One week later", "--muted"],
-  ledger: ["Audit log", "--c-led"], summary: ["Result", "--ink"]};
+const LV = {playing: false, busy: false, data: null, stage: -1, pos: {}, setup: false, names: {}};
+const STEPS = [
+  ["report", "1 · Report", "Hospitals send numbers", "--c-hosp", "Hospital agents"],
+  ["check", "2 · Check", "Bad reports caught", "--c-stew", "Data Steward agent"],
+  ["forecast", "3 · Forecast", "Next week predicted", "--c-fore", "Forecast agent"],
+  ["plan", "4 · Plan", "Moves suggested", "--c-coord", "State coordinator agent"],
+  ["answer", "5 · Answer", "Hospitals say yes / no", "--c-hosp", "Hospital agents"],
+  ["result", "6 · Result", "What it achieved", "--ink", "Result"]];
+const TONE = {red: "--red", inject: "--red", saved: "--red", miss: "--amber", green: "--green",
+              amber: "--amber", grey: "--grey", ledger: "--c-led"};
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const fmtDate = d => new Date(d + "T00:00:00").toLocaleDateString(undefined, {day: "numeric", month: "short", year: "numeric"});
 async function lvApi(path, method = "GET"){
@@ -641,172 +670,200 @@ async function lvApi(path, method = "GET"){
   if (!r.ok) throw new Error(d.detail || ("HTTP " + r.status));
   return d;
 }
-function occColor(occ, level){
-  if (level === "RED" || level === "MISSING" || occ == null) return "none";
+function occColor(occ){
+  if (occ == null) return css("--grey");
   return occ >= 0.9 ? css("--red") : occ >= 0.8 ? css("--amber") : css("--green");
 }
-function lvDrawMap(hs, title){
+function lvSteps(){
+  $("#lv-steps").innerHTML = STEPS.map(([k, n, t], i) =>
+    `<li class="${i < LV.stage ? "done" : i === LV.stage ? "active" : ""}"><b>${n}</b>${t}</li>`).join("");
+}
+// opt.mode: "now" | "forecast" | "next"; opt.arcs: [{from, to, moved?}]
+function lvDrawMap(hs, opt){
   const pts = hs.filter(h => h.lat != null && h.lon != null);
   if (!pts.length){ $("#lv-map").innerHTML = "<div class='empty'>No hospitals.</div>"; return; }
-  const W = 640, H = 470, pad = 22;
-  const lats = pts.map(h => h.lat), lons = pts.map(h => h.lon);
+  const W = 640, H = 480, pad = 26;
+  // Zoom: fit the hospitals this step is about (plus neighbours), else the whole state.
+  const zs = (opt.zoom || []).map(id => pts.find(h => h.id === id)).filter(Boolean);
+  const box = zs.length ? zs : pts;
+  const lats = box.map(h => h.lat), lons = box.map(h => h.lon);
   const kx = Math.cos(((Math.min(...lats) + Math.max(...lats)) / 2) * Math.PI / 180);
-  const x0 = Math.min(...lons) * kx, x1 = Math.max(...lons) * kx, y0 = Math.min(...lats), y1 = Math.max(...lats);
+  let x0 = Math.min(...lons) * kx, x1 = Math.max(...lons) * kx, y0 = Math.min(...lats), y1 = Math.max(...lats);
+  if (zs.length){
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    const half = Math.max(x1 - x0, (y1 - y0) * (W / H), 0.45) * 0.62;
+    x0 = cx - half; x1 = cx + half; y0 = cy - half * H / W; y1 = cy + half * H / W;
+  }
   const sc = Math.min((W - 2 * pad) / ((x1 - x0) || 1), (H - 2 * pad) / ((y1 - y0) || 1));
   const ox = (W - (x1 - x0) * sc) / 2, oy = (H - (y1 - y0) * sc) / 2;
   LV.pos = {};
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img"><defs><marker id="lv-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="${css('--accent')}"/></marker></defs>
-    <rect width="${W}" height="${H}" rx="10" fill="${css('--bg')}"/><g id="lv-arcs"></g><g id="lv-dots">`;
-  pts.forEach(h => {
-    const x = ox + (h.lon * kx - x0) * sc, y = H - oy - (h.lat - y0) * sc;
-    LV.pos[h.id] = [x, y];
-    const occ = h.occupancy_now ?? h.occupancy, bad = h.level === "RED" || h.level === "MISSING";
-    const r = 3 + Math.sqrt(h.beds || 25) / 3.2;
-    s += `<circle data-id="${esc(h.id)}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${occColor(occ, h.level)}" fill-opacity=".85"
-      stroke="${bad ? css('--grey') : css('--panel')}" stroke-width="${bad ? 2 : 1}" ${bad ? 'stroke-dasharray="3 2"' : ""}>
-      <title>${esc(h.name)}${h.city ? " (" + esc(h.city) + ")" : ""} — ${h.level}${occ != null ? ", " + pct(occ, 0) + " full" : ""}${h.forecast != null ? ", forecast " + pct(h.forecast, 0) : ""}</title></circle>`;
+  pts.forEach(h => { LV.pos[h.id] = [ox + (h.lon * kx - x0) * sc, H - oy - (h.lat - y0) * sc]; });
+  const focus = new Set(opt.focus || []);
+  const occOf = h => opt.mode === "forecast" ? h.forecast : opt.mode === "next"
+      ? (h.trusted_next && h.beds_next ? h.used_next / h.beds_next : null) : (h.occupancy_now ?? h.occupancy);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img"><defs><marker id="lv-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="${css('--accent')}"/></marker></defs>
+    <rect width="${W}" height="${H}" rx="10" fill="${css('--bg')}"/>`;
+  (opt.arcs || []).forEach(a => {
+    const p = LV.pos[a.from], q = LV.pos[a.to]; if (!p || !q) return;
+    s += a.moved != null
+      ? `<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" stroke="${css('--accent')}" stroke-width="${(1.5 + Math.min(5, a.moved / 4)).toFixed(1)}" marker-end="url(#lv-arrow)" opacity=".9"/>`
+      : `<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" stroke="${css('--c-coord')}" stroke-width="1.6" stroke-dasharray="5 4" opacity=".85"/>`;
   });
-  $("#lv-map").innerHTML = s + "</g></svg>";
-  $("#lv-map-title").textContent = title;
+  pts.forEach(h => {
+    const [x, y] = LV.pos[h.id], bad = opt.flags && (h.level === "RED" || h.level === "MISSING");
+    const r = 3.5 + Math.sqrt(h.beds || 25) / 3, f = focus.has(h.id), occ = occOf(h);
+    if (bad){
+      s += `<g opacity="${f ? 1 : .75}"><circle cx="${x}" cy="${y}" r="${r}" fill="${css('--panel')}" stroke="${css('--grey')}" stroke-width="2" stroke-dasharray="3 2"/>
+        <path d="M${x - r * .6},${y - r * .6}L${x + r * .6},${y + r * .6}M${x + r * .6},${y - r * .6}L${x - r * .6},${y + r * .6}" stroke="${css('--red')}" stroke-width="2"/>
+        <title>${esc(h.name)} — report set aside</title></g>`;
+    } else {
+      s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${occColor(occ)}" fill-opacity="${occ == null ? .35 : .88}" stroke="${f ? css('--ink') : css('--panel')}" stroke-width="${f ? 3 : 1}"><title>${esc(h.name)} — ${occ == null ? "no trusted number" : pct(occ, 0) + " full"}</title></circle>`;
+    }
+  });
+  // Numbered badges match the numbers in the text panel (names would overlap).
+  Object.entries(opt.badges || {}).forEach(([id, n]) => {
+    const p = LV.pos[id]; if (!p) return;
+    const bx = p[0] + 10, by = p[1] - 10, on = focus.has(id);
+    s += `<g opacity="${on ? 1 : .55}"><circle cx="${bx}" cy="${by}" r="10" fill="${css('--ink')}" stroke="${css('--panel')}" stroke-width="1.5"/><text x="${bx}" y="${by + 4}" text-anchor="middle" style="fill:${css('--panel')};font-size:12px;font-weight:700">${n}</text></g>`;
+  });
+  $("#lv-map").innerHTML = s + "</svg>";
+  const mode = {now: "how full this week", forecast: "expected next week", next: "real numbers next week"}[opt.mode];
+  $("#lv-map-mode").textContent = "Colour = " + mode;
+  $("#lv-legend").innerHTML = `<span><i class="dot" style="background:var(--green)"></i>Has room (under 80%)</span><span><i class="dot" style="background:var(--amber)"></i>Busy (80–90%)</span><span><i class="dot" style="background:var(--red)"></i>Too full (over 90%)</span>` +
+    (opt.flags ? `<span><b style="color:var(--red)">✕</b> Report set aside</span>` : "") +
+    ((opt.arcs || []).some(a => a.moved == null) ? `<span><i style="background:var(--c-coord)"></i>Suggested move</span>` : "") +
+    ((opt.arcs || []).some(a => a.moved != null) ? `<span><i style="background:var(--accent)"></i>Patients could move</span>` : "");
 }
-function lvFocus(ids){
-  document.querySelectorAll("#lv-map circle.focus").forEach(c => c.classList.remove("focus"));
-  (ids || []).forEach(id => { const c = document.querySelector(`#lv-map circle[data-id="${CSS.escape(id)}"]`); if (c) c.classList.add("focus"); });
+function lvShowStage(){
+  lvSteps();
+  const d = LV.data, run = d.run, st = d.stages[LV.stage];
+  const col = STEPS[LV.stage][3], who = STEPS[LV.stage][4];
+  const nums = st.numbers.map(n => `<div><div class="v" style="color:${css(n.tone ? (TONE[n.tone] || "--ink") : "--ink")}">${esc(n.value)}</div><div class="l">${esc(n.label)}</div></div>`).join("");
+  const badges = {}; let nb = 0;
+  [...st.items.flatMap(it => it.focus || []), ...(st.map.focus || [])].forEach(id => { if (!(id in badges) && nb < 9) badges[id] = ++nb; });
+  const bdg = ids => (ids || []).filter(id => id in badges).map(id => `<span class="bdg">${badges[id]}</span>`).join("");
+  const items = st.items.map(it => `<div class="item" data-focus="${esc((it.focus || []).join(","))}" style="border-left-color:${css(TONE[it.tone] || "--line")}">${bdg(it.focus)}${esc(it.text)}</div>`).join("");
+  const story = st.story ? `<div class="story" data-focus="${esc(st.story.from.id + "," + st.story.to.id)}"><b class="k">Example from this week · ${bdg([st.story.from.id])}→ ${bdg([st.story.to.id])}</b>${esc(st.story.text)}</div>` : "";
+  $("#lv-stage").innerHTML = `<div class="who" style="color:${css(col)}">Step ${LV.stage + 1} of 6 · ${esc(who)}</div>
+    <h2>${esc(st.title)}</h2><p class="cap">${esc(st.caption)}</p><div class="nums">${nums}</div>${story}${items}
+    <p class="small muted" style="margin:12px 0 0">${LV.stage < 5 ? "Press <b>Next step ›</b> to continue." : "Press <b>Next step ›</b> to start the next week."}</p>`;
+  const arcs = st.map.arcs === "planned" ? run.proposals.map(p => ({from: p.from, to: p.to}))
+             : st.map.arcs === "moved" ? run.proposals.filter(p => p.executed > 0.5).map(p => ({from: p.from, to: p.to, moved: p.executed})) : [];
+  const zoom = LV.stage >= 3 && Object.keys(badges).length ? Object.keys(badges) : [];
+  const draw = focus => lvDrawMap(run.hospitals, {mode: st.map.color, flags: st.map.flags, arcs, focus, badges, zoom});
+  draw(st.map.focus.length ? st.map.focus : Object.keys(badges));
+  // Hovering a line in the panel highlights those hospitals on the map.
+  document.querySelectorAll("#lv-stage .item").forEach(el => {
+    el.onmouseenter = () => { const f = el.dataset.focus ? el.dataset.focus.split(",") : []; if (f.length) draw(f); };
+    el.onmouseleave = () => draw(st.map.focus.length ? st.map.focus : Object.keys(badges));
+  });
+  $("#lv-map-title").textContent = `${d.state_name} · week of ${fmtDate(run.week)}` + (zoom.length ? " · zoomed in" : "");
+  if (LV.stage === 5){ lvHistory(d.history); lvLedger(d.ledger); }
 }
-function lvArc(a){
-  const g = document.getElementById("lv-arcs"); if (!g) return;
-  const p = LV.pos[a.from], q = LV.pos[a.to]; if (!p || !q) return;
-  const key = `${a.from}->${a.to}`;
-  let line = g.querySelector(`line[data-k="${CSS.escape(key)}"]`);
-  if (!line){
-    line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("data-k", key);
-    line.setAttribute("x1", p[0]); line.setAttribute("y1", p[1]); line.setAttribute("x2", q[0]); line.setAttribute("y2", q[1]);
-    g.appendChild(line);
-  }
-  if (a.moved != null){
-    line.setAttribute("class", "moved");
-    line.setAttribute("stroke-width", (1.2 + Math.min(5, a.moved / 3)).toFixed(1));
-    line.setAttribute("marker-end", "url(#lv-arrow)");
-  } else {
-    line.setAttribute("class", "planned");
-    line.setAttribute("stroke-width", "1.4");
-  }
+function lvIntro(st, hs){
+  LV.stage = -1; lvSteps();
+  $("#lv-stage").innerHTML = `<div class="who" style="color:${css('--accent')}">Before we start</div>
+    <h2>You are the ${esc(st.state_name)} health department</h2>
+    <p class="cap">Every dot on the map is a real hospital in ${esc(st.state_name)}. Some will be too full next week while others nearby have empty beds. Software agents work together to find those patients a bed — and to make sure nobody acts on a wrong number.</p>
+    <div class="item" style="border-left-color:${css('--c-hosp')}"><b>Hospital agents</b> — one per hospital. Send their numbers; decide whether to accept patients.</div>
+    <div class="item" style="border-left-color:${css('--c-stew')}"><b>Data Steward</b> — catches reports that cannot be true.</div>
+    <div class="item" style="border-left-color:${css('--c-fore')}"><b>Forecaster</b> — predicts how full each hospital will be next week.</div>
+    <div class="item" style="border-left-color:${css('--c-coord')}"><b>State coordinator</b> — suggests moving patients to nearby hospitals with room.</div>
+    <div class="item" style="border-left-color:${css('--c-led')}"><b>Audit log</b> — writes everything down so nobody can change it later.</div>
+    <p class="small muted" style="margin:12px 0 0">Real reports from the week of ${fmtDate(st.week)}. Press <b>Next step ›</b> to begin.</p>`;
+  lvDrawMap(hs, {mode: "now", flags: false, arcs: [], focus: []});
+  $("#lv-map-title").textContent = `${st.state_name} · ${hs.length} hospitals`;
 }
-function lvAddEvent(ev){
-  const feed = $("#lv-feed");
-  const [tag, col] = AGENT[ev.agent] || [ev.agent, "--muted"];
-  const tone = ev.level === "RED" || ev.level === "SAVED" ? "--red" : ev.level === "MISS" ? "--amber"
-             : ev.level === "ACCEPT" ? "--green" : ev.level === "DECLINE" ? "--grey" : col;
-  const label = ev.level === "SAVED" ? "Data Steward — what it prevented" : ev.level === "MISS" ? "Data Steward — missed" : tag;
-  const div = document.createElement("div");
-  div.className = "ev" + (ev.agent === "summary" || ev.level === "SAVED" ? " big" : "");
-  div.style.borderLeftColor = css(tone);
-  div.innerHTML = `<span class="tag" style="color:${css(tone)}">${esc(label)}</span>${esc(ev.text)}`;
-  feed.insertBefore(div, feed.firstChild);     // newest on top: nobody has to scroll
-  feed.scrollTop = 0;
-}
-function lvKpis(t, run, revealed){
-  const n = t.hospitals - t.missing_reports;
-  const tiles = [
-    ["Hospitals reporting", num(n), `of ${num(t.hospitals)} in ${run.state}`],
-    ["Reports that can't be right", num(t.red_reports), "flagged RED by the Data Steward"],
-    ["Patients above safe level", num(t.overload_patient_days / 7), `next week (over 90% full)`],
-    ["Patients moved", revealed ? num(t.moved_patient_days / 7) : "…", revealed ? "to hospitals that really had room" : "waiting for hospitals to answer"],
-    ["Share absorbed", revealed ? (t.share_absorbed == null ? "—" : pct(t.share_absorbed, 0)) : "…", "of the patients above safe level"]];
-  $("#lv-kpis").innerHTML = tiles.map(([k, v, s]) => `<div class="card kpi"><div class="small muted">${k}</div><div class="big">${v}</div><div class="small muted">${s}</div></div>`).join("");
-}
-function lvBlankKpis(){
-  $("#lv-kpis").innerHTML = ["Hospitals reporting", "Reports that can't be right", "Patients above safe level", "Patients moved", "Share absorbed"]
-    .map(k => `<div class="card kpi"><div class="small muted">${k}</div><div class="big">—</div><div class="small muted">press ▶ Play</div></div>`).join("");
+function lvFeed(feed){
+  $("#lv-feed").innerHTML = feed.filter(e => !e.silent).map(ev => {
+    const tone = ev.level === "RED" || ev.level === "SAVED" ? "--red" : ev.level === "MISS" ? "--amber" : "--line";
+    return `<div class="ev" style="border-left-color:${css(tone)}"><span class="tag muted">${esc(ev.agent)}</span>${esc(ev.text)}</div>`;
+  }).join("");
 }
 function lvHistory(h){
-  if (!h || !h.length){ $("#lv-hist").textContent = "Weeks you play appear here."; return; }
-  const W = 360, H = 150, B = 18, n = h.length, bw = Math.max(3, Math.min(22, (W - 10) / n / 2.2));
+  if (!h || !h.length){ $("#lv-hist").textContent = "Each finished week appears here."; return; }
+  const W = 360, H = 140, B = 18, n = h.length, bw = Math.max(3, Math.min(22, (W - 10) / n / 2.2));
   const max = Math.max(...h.map(x => x.above_safe), 1);
   let s = `<svg viewBox="0 0 ${W} ${H}">`;
   h.forEach((x, i) => {
     const cx = 6 + i * (W - 12) / Math.max(n, 1), y1 = (H - B) * x.above_safe / max, y2 = (H - B) * x.moved / max;
-    s += `<rect x="${cx}" y="${H - B - y1}" width="${bw}" height="${y1}" fill="${css('--red')}" opacity=".75"><title>${x.week}: ${num(x.above_safe)} above safe level</title></rect>`;
-    s += `<rect x="${cx + bw}" y="${H - B - y2}" width="${bw}" height="${y2}" fill="${css('--accent')}"><title>${x.week}: ${num(x.moved)} moved</title></rect>`;
+    s += `<rect x="${cx}" y="${H - B - y1}" width="${bw}" height="${y1}" fill="${css('--red')}" opacity=".75"><title>${x.week}: ${num(x.above_safe)} in too-full hospitals</title></rect>`;
+    s += `<rect x="${cx + bw}" y="${H - B - y2}" width="${bw}" height="${y2}" fill="${css('--accent')}"><title>${x.week}: ${num(x.moved)} could move</title></rect>`;
   });
   const tot = h.reduce((a, x) => [a[0] + x.above_safe, a[1] + x.moved], [0, 0]);
-  s += `<text x="4" y="${H - 3}">${esc(h[0].week)}</text><text x="${W - 4}" y="${H - 3}" text-anchor="end">${esc(h[n - 1].week)}</text></svg>`;
-  $("#lv-hist").innerHTML = s + `<div style="margin-top:4px;color:var(--ink)">${n} week${n > 1 ? "s" : ""} played · ${num(tot[1])} of ${num(tot[0])} patients above the safe level could be moved (${tot[0] ? pct(tot[1] / tot[0], 0) : "—"})</div>`;
+  s += `<text x="4" y="${H - 3}">${esc(h[0].week)}</text>${n > 1 ? `<text x="${W - 4}" y="${H - 3}" text-anchor="end">${esc(h[n - 1].week)}</text>` : ""}</svg>`;
+  $("#lv-hist").innerHTML = s + `<div style="margin-top:4px;color:var(--ink)">${n} week${n > 1 ? "s" : ""}: ${num(tot[1])} of ${num(tot[0])} patients in too-full hospitals could have moved (${tot[0] ? pct(tot[1] / tot[0], 0) : "—"}).</div>`;
 }
 function lvLedger(l, tampered){
   const chip = $("#lv-chip");
-  if (!l || !l.blocks){ chip.className = "chip ok"; chip.textContent = "🔒 Log: empty"; $("#lv-ledger").textContent = "Nothing recorded yet."; return; }
+  if (!l || !l.blocks){ chip.className = "chip ok"; chip.textContent = "🔒 Audit log: empty"; $("#lv-ledger").textContent = "Nothing recorded yet."; return; }
   if (l.ok){
-    chip.className = "chip ok"; chip.textContent = `🔒 Log verified · ${l.blocks} week${l.blocks > 1 ? "s" : ""}`;
-    $("#lv-ledger").innerHTML = `<p class="ok" style="margin:0">✓ ${l.blocks} week${l.blocks > 1 ? "s" : ""} recorded, every fingerprint checks out.</p><p class="muted" style="margin:6px 0 0">Latest fingerprint</p><p class="hash" style="margin:2px 0 0">${esc(l.head)}</p>`;
+    chip.className = "chip ok"; chip.textContent = `🔒 Audit log OK · ${l.blocks} week${l.blocks > 1 ? "s" : ""}`;
+    $("#lv-ledger").innerHTML = `<p class="ok" style="margin:0">✓ ${l.blocks} week${l.blocks > 1 ? "s" : ""} written down. Every page still matches its fingerprint.</p><p class="hash muted" style="margin:6px 0 0">${esc(l.head)}</p>`;
   } else {
-    chip.className = "chip bad"; chip.textContent = `⚠ Log broken at week #${l.first_bad_block}`;
-    $("#lv-ledger").innerHTML = `<p class="bad" style="margin:0">✗ Check failed at block #${l.first_bad_block}.</p>` +
-      (tampered ? `<p style="margin:6px 0 0">Someone changed the patients reported by <b>${esc(tampered.hospital)}</b> in the week of ${esc(tampered.week)} from ${tampered.before} to ${tampered.after}. Nothing else was touched, yet the check names exactly where.</p>` : "") +
+    chip.className = "chip bad"; chip.textContent = `⚠ Audit log: change detected in week ${l.first_bad_block + 1}`;
+    $("#lv-ledger").innerHTML = `<p class="bad" style="margin:0">✗ Someone changed the record — caught.</p>` +
+      (tampered ? `<p style="margin:6px 0 0">${esc(tampered.hospital)}'s patient count for the week of ${esc(String(tampered.week).replace(/^[A-Z]{2} /, ""))} was quietly changed from ${tampered.before} to ${tampered.after}. Only that one number was touched, and the check points to exactly that week.</p>` : "") +
       `<p class="muted" style="margin:6px 0 0">Press ↺ Restart for a clean log.</p>`;
   }
 }
 function lvPending(p){
-  $("#lv-pending").innerHTML = (p && p.length) ? p.map(x => `<div class="prop">⏳ Next week: <b>${esc((LV.names || {})[x.id] || x.id)}</b> — ${esc(x.mistake)}</div>`).join("") : "";
+  $("#lv-pending").innerHTML = (p && p.length) ? p.map(x => `<div class="item" style="border-left-color:${css('--red')}">Next week, <b>${esc(LV.names[x.id] || x.id)}</b> will send a wrong number: ${esc(x.mistake.toLowerCase())}.</div>`).join("") : "";
 }
-function lvHeader(st, run){
-  const total = st.weeks.length;
-  if (run){
-    $("#lv-week").textContent = `Week of ${fmtDate(run.week)} · ${run.state}`;
-    $("#lv-sub").textContent = `Week ${st.week_idx} of ${total} · planning for the week of ${fmtDate(run.next_week)}`;
-  } else {
-    $("#lv-week").textContent = `Ready: ${st.state}, week of ${fmtDate(st.week)}`;
-    $("#lv-sub").textContent = `Week ${st.week_idx + 1} of ${total} · real reports, replayed one week at a time`;
-  }
-}
-async function lvLoadState(st){
-  const hs = await lvApi("hospitals");
-  LV.names = Object.fromEntries(hs.map(h => [h.id, h.name]));
-  lvDrawMap(hs, `${hs.length} hospitals in ${st.state}`);
-  $("#lv-feed").innerHTML = `<div class="empty">Press ▶ Play to start the week.</div>`;
-  lvBlankKpis(); lvHistory(st.history); lvLedger(st.ledger); lvPending(st.pending); lvHeader(st, null);
-  const opts = hs.slice().sort((a, b) => a.name.localeCompare(b.name));
-  const fullest = hs.filter(h => h.level === "GREEN" && (h.beds || 0) >= 80 && h.occupancy != null).sort((a, b) => b.occupancy - a.occupancy)[0];
-  $("#lv-hosp").innerHTML = opts.map(h => `<option value="${esc(h.id)}" ${fullest && h.id === fullest.id ? "selected" : ""}>${esc(h.name)}${h.occupancy != null ? " — " + pct(h.occupancy, 0) + " full" : ""}</option>`).join("");
-  $("#lv-mistake").value = "lost_digit";
-}
-async function lvStep(){
-  if (LV.running) return null;
-  LV.running = true;
+async function lvNext(){
+  if (LV.busy) return false;
+  LV.busy = true;
   try {
-    const d = await lvApi("step", "POST");
-    if (!d.run){ lvStop(); $("#lv-sub").textContent = "Reached the last week of data. Press ↺ Restart."; return d; }
-    const run = d.run;
-    lvDrawMap(run.hospitals, `${run.hospitals.length} hospitals in ${run.state} · week of ${fmtDate(run.week)}`);
-    $("#lv-feed").innerHTML = "";
-    lvHeader(d, run); lvKpis(run.totals, run, false); lvPending([]);
-    for (const ev of d.feed){
-      if (ev.arc) lvArc(ev.arc);
-      if (ev.silent) { if (LV.speed) await sleep(LV.speed * 0.12); continue; }
-      lvFocus(ev.focus); lvAddEvent(ev);
-      if (LV.speed) await sleep(LV.speed);
+    if (!LV.data || LV.stage >= 5){
+      const d = await lvApi("step", "POST");
+      if (!d.run){ lvStop(); $("#lv-stage").insertAdjacentHTML("beforeend", "<p class='bad'>That was the last week of data. Press ↺ Restart.</p>"); return false; }
+      LV.data = d; LV.stage = 0; lvFeed(d.feed); lvPending(d.pending);
+      LV.names = Object.fromEntries(d.run.hospitals.map(h => [h.id, h.name]));
+      $("#lv-start").value = String(Math.max(0, d.week_idx - 1));
+    } else {
+      LV.stage += 1;
     }
-    lvFocus([]); lvKpis(run.totals, run, true); lvHistory(d.history); lvLedger(d.ledger);
-    return d;
+    lvShowStage();
+    return true;
   } catch (e) {
-    lvStop(); $("#lv-feed").insertAdjacentHTML("beforeend", `<div class="ev" style="border-left-color:${css('--red')}">Error: ${esc(e.message)}</div>`);
-    return null;
-  } finally { LV.running = false; }
+    lvStop(); $("#lv-stage").insertAdjacentHTML("beforeend", `<p class="bad">Error: ${esc(e.message)}</p>`); return false;
+  } finally { LV.busy = false; }
 }
-function lvStop(){ LV.playing = false; $("#lv-play").textContent = "▶ Play"; }
+function lvStop(){ LV.playing = false; $("#lv-play").textContent = "▶ Auto-play"; }
 async function lvPlay(){
   if (LV.playing){ lvStop(); return; }
   LV.playing = true; $("#lv-play").textContent = "⏸ Pause";
   while (LV.playing){
-    const d = await lvStep();
-    if (!d || !d.run) break;
-    if (LV.playing) await sleep(Math.max(500, LV.speed * 2.5));
+    if (!(await lvNext())) break;
+    await sleep(+$("#lv-speed").value);
   }
+}
+async function lvLoadState(st){
+  const hs = await lvApi("hospitals");
+  LV.data = null; LV.names = Object.fromEntries(hs.map(h => [h.id, h.name]));
+  lvIntro(st, hs); lvHistory(st.history); lvLedger(st.ledger); lvPending(st.pending);
+  $("#lv-feed").innerHTML = `<div class="empty">Nothing yet.</div>`;
+  const opts = hs.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const km = (a, b) => { const r = Math.PI / 180, dl = (b.lat - a.lat) * r, dn = (b.lon - a.lon) * r;
+    const x = Math.sin(dl / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dn / 2) ** 2; return 12742 * Math.asin(Math.sqrt(x)); };
+  const crowded = h => hs.filter(o => o.id !== h.id && km(h, o) <= 30).length >= 3;
+  const fullest = hs.filter(h => h.level === "GREEN" && (h.beds || 0) >= 80 && h.occupancy != null && crowded(h))
+                    .sort((a, b) => b.occupancy - a.occupancy)[0];
+  $("#lv-hosp").innerHTML = opts.map(h => `<option value="${esc(h.id)}" ${fullest && h.id === fullest.id ? "selected" : ""}>${esc(h.name)}${h.occupancy != null ? " — " + pct(h.occupancy, 0) + " full" : ""}</option>`).join("");
+  $("#lv-mistake").value = "lost_digit";
+  $("#lv-start").value = String(st.week_idx);
+  // Pre-select the hospital where a typo would really misdirect patients this week.
+  try {
+    const pick = await lvApi("demo_pick");
+    if (pick.id){
+      $("#lv-hosp").value = pick.id;
+      $("#lv-pending").innerHTML = `<div class="small muted" style="margin-top:6px">Pre-selected: if <b>${esc(pick.name)}</b> made this typo this week and nobody checked, about <b>${num(pick.would_receive)}</b> patients would be sent to it although it is full.</div>`;
+    }
+  } catch (e) {}
 }
 async function lvRestart(){
   lvStop();
-  while (LV.running) await sleep(100);
+  while (LV.busy) await sleep(100);
   const st = await lvApi(`reset?state=${encodeURIComponent($("#lv-state").value)}&week_idx=${$("#lv-start").value}`, "POST");
   await lvLoadState(st);
 }
@@ -823,15 +880,14 @@ async function renderLive(){
   $("#lv-wait").style.display = "none"; $("#lv-main").style.display = "block";
   if (!LV.setup){
     LV.setup = true;
-    $("#lv-state").innerHTML = st.states.map(s => `<option value="${s.state}" ${s.state === st.state ? "selected" : ""}>${s.state} (${s.hospitals} hospitals)</option>`).join("");
-    $("#lv-start").innerHTML = st.weeks.map((w, i) => `<option value="${i}" ${i === st.week_idx ? "selected" : ""}>${fmtDate(w)}</option>`).join("");
+    $("#lv-state").innerHTML = st.states.map(s => `<option value="${s.state}" ${s.state === st.state ? "selected" : ""}>${esc(s.name)}</option>`).join("");
+    $("#lv-start").innerHTML = st.weeks.map((w, i) => `<option value="${i}">${fmtDate(w)}</option>`).join("");
     $("#lv-mistake").innerHTML = Object.entries(st.mistakes).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+    $("#lv-next").onclick = () => { lvStop(); lvNext(); };
     $("#lv-play").onclick = lvPlay;
-    $("#lv-next").onclick = () => { lvStop(); lvStep(); };
     $("#lv-restart").onclick = lvRestart;
     $("#lv-state").onchange = lvRestart;
     $("#lv-start").onchange = lvRestart;
-    $("#lv-speed").onchange = () => { LV.speed = +$("#lv-speed").value; };
     $("#lv-inject").onclick = async () => {
       try { const d = await lvApi(`inject?hospital_id=${encodeURIComponent($("#lv-hosp").value)}&mistake=${$("#lv-mistake").value}`, "POST"); lvPending(d.pending); }
       catch (e) { $("#lv-pending").textContent = e.message; }
@@ -840,21 +896,17 @@ async function renderLive(){
       try {
         const d = await lvApi("tamper", "POST");
         const id = String(d.hospital).replace("hospital:", "");
-        lvLedger(d.ledger, {...d, hospital: (LV.names || {})[id] || id});
-      }
-      catch (e) { $("#lv-ledger").innerHTML = `<p class="muted" style="margin:0">${esc(e.message)}</p>`; }
+        lvLedger(d.ledger, {...d, hospital: LV.names[id] || "A hospital"});
+      } catch (e) { $("#lv-ledger").innerHTML = `<p class="muted" style="margin:0">${esc(e.message)}</p>`; }
     };
   }
   await lvLoadState(st);
-  // Hands-free demo: ?autoplay=3&speed=120&inject=lost_digit plays 3 weeks.
+  // Hands-free demo and screenshots: ?steps=8&inject=lost_digit
   const q = new URLSearchParams(location.search);
-  if (q.has("autoplay") && !LV.autoplayed){
-    LV.autoplayed = true;
-    if (q.has("speed")) { LV.speed = +q.get("speed"); $("#lv-speed").value = q.get("speed"); }
-    for (let i = 0; i < (+q.get("autoplay") || 1); i++){
-      if (i === 0 && q.has("inject")) { $("#lv-mistake").value = q.get("inject"); await $("#lv-inject").onclick(); }
-      const d = await lvStep(); if (!d || !d.run) break;
-    }
+  if (q.has("steps") && !LV.auto){
+    LV.auto = true;
+    if (q.has("inject")) { $("#lv-mistake").value = q.get("inject"); await $("#lv-inject").onclick(); }
+    for (let i = 0; i < +q.get("steps"); i++) if (!(await lvNext())) break;
   }
 }
 

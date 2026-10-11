@@ -159,32 +159,41 @@ next. (Do a full systematic literature search before submission.)
 
 ## 6. The live demo (3 minutes)
 
-Start the server before the review (`python -m mahros.server`, wait ~15 s
-until the map appears). Open http://127.0.0.1:8000 — it opens on **Live
-operations**.
+Start the server before the review (`python -m mahros.server`) and wait about
+15 seconds. Open http://127.0.0.1:8000. It opens on **Live operations**, set
+to **Arizona** (Arizona really ran a statewide transfer line during COVID-19,
+which is a good real-world hook).
 
-1. **Set the scene (20 s).** "This is a state health department's screen.
-   These are the real hospitals in Texas, and the real reports they sent the
-   government in March 2023. Nothing here is made up."
-2. **Press ▶ Play (60 s).** Point at the feed, newest message on top:
-   hospitals report → the Data Steward flags reports that cannot be right, and
-   says why → the forecaster names hospitals that will be too full → the
-   coordinator proposes transfers, each with a reason → a week later each
-   hospital accepts only what its real numbers allow. Point at the counters:
-   patients above the safe level, patients moved.
-3. **Pause, then inject a mistake (60 s).** In "Inject a mistake" the fullest
-   hospital is already selected. Choose "Digit missing", press the button,
-   then "⏭ One week". Its report now says it is nearly empty. The Data Steward
-   marks it RED, and the red line says how many patients would have been sent
-   into a full hospital without that check. *That is the point of the project.*
-4. **Tamper with the log (30 s).** "Secretly change a past report": the chip
-   turns red and names the exact week that was changed.
-5. **Close (10 s).** "Every step you just saw is in the paper, measured over
-   69 weeks and every state — the Evidence tabs show the numbers."
+You drive it with one button: **Next step ›**. Each press moves one step; the
+left panel says what is happening in one plain sentence, the map shows it,
+and numbered badges on the map (①②③) match the numbers in the text.
 
-If the Steward does *not* catch an injected mistake (e.g. a swap at a
-hospital that is nearly full), say so: "It looked plausible, so it was
-believed — that is the limit we report: subtle errors are not caught."
+1. **Intro screen.** "This is a state health department's screen. Every dot is
+   a real Arizona hospital; every number is the real report it sent the
+   government." The five agents are listed.
+2. **Before the first step**, scroll to *Try it: add a mistake*. The hospital
+   is already chosen for you — the one where a typo would do the most harm
+   this week. Keep "Digit missing" and press *Add it to next week's report*.
+3. **Press Next step six times**, reading the big sentence each time:
+   1. Hospitals send their numbers (your mistake is shown in red).
+   2. The Data Steward checks them — "Your mistake was caught".
+   3. The forecaster predicts next week (map colour changes to "expected").
+   4. The coordinator suggests moves (dashed orange lines, map zooms in).
+   5. A week later hospitals say yes / partly / no from their real numbers.
+   6. Result: how many patients could move, a worked example, and — in red —
+      how many patients would have been sent to a full hospital if nobody had
+      checked.
+4. **Tamper.** Press *Try to secretly change a past report*: the audit log
+   turns red and names the week that was changed.
+5. **Close.** "This is one week in one state. The Evidence tabs show the same
+   thing measured over 69 weeks and every state."
+
+**What the dropdowns mean:** *State* = which state health department you are;
+*Week* = which real week to start from; *Speed* = only for Auto-play.
+
+If a mistake is *not* caught (try "Beds and patients typed in each other's
+box" on a nearly full hospital), say so: "It looked believable, so it was
+accepted — small mistakes can slip through, and we report that."
 
 ## 7. If you get stuck
 

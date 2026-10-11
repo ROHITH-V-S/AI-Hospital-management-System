@@ -35,6 +35,34 @@ MISTAKES = {
 
 FEED_LIMIT = 12          # individual items per section before "...and N more"
 
+STATE_NAMES = {
+    "AK": "Alaska", "AL": "Alabama", "AR": "Arkansas", "AS": "American Samoa", "AZ": "Arizona",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DC": "District of Columbia",
+    "DE": "Delaware", "FL": "Florida", "GA": "Georgia", "GU": "Guam", "HI": "Hawaii", "IA": "Iowa",
+    "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "KS": "Kansas", "KY": "Kentucky",
+    "LA": "Louisiana", "MA": "Massachusetts", "MD": "Maryland", "ME": "Maine", "MI": "Michigan",
+    "MN": "Minnesota", "MO": "Missouri", "MP": "Northern Mariana Islands", "MS": "Mississippi",
+    "MT": "Montana", "NC": "North Carolina", "ND": "North Dakota", "NE": "Nebraska",
+    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NV": "Nevada", "NY": "New York",
+    "OH": "Ohio", "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania", "PR": "Puerto Rico",
+    "RI": "Rhode Island", "SC": "South Carolina", "SD": "South Dakota", "TN": "Tennessee",
+    "TX": "Texas", "UT": "Utah", "VA": "Virginia", "VI": "U.S. Virgin Islands", "VT": "Vermont",
+    "WA": "Washington", "WI": "Wisconsin", "WV": "West Virginia", "WY": "Wyoming"}
+
+#: The Data Steward's reasons, said the way you would say them out loud.
+PLAIN_REASON = {
+    "FROZEN_CENSUS": "the patient count has not changed for weeks — the number stopped updating",
+    "FROZEN_ICU": "the ICU count has not changed for weeks — the number stopped updating",
+    "CENSUS_OVER_BEDS": "it reports more patients than it has beds — impossible",
+    "ICU_OVER_BEDS": "it reports more ICU patients than ICU beds — impossible",
+    "ICU_BEDS_OVER_TOTAL": "it reports more ICU beds than beds in total — impossible",
+    "CENSUS_SPIKE": "the patient count jumped too much in one week — looks like a typo",
+    "BEDS_SPIKE": "the number of beds jumped too much in one week — looks like a typo",
+    "NOT_REPORTED": "no numbers were sent",
+    "SUPPRESSED_SMALL": "the count was too small to publish",
+}
+DEFAULT_STATE = "AZ"
+
 
 @dataclass
 class Session:
@@ -80,9 +108,11 @@ class LiveEngine:
             self._by_pk = self._reports.groupby("hospital_pk", sort=False).indices
             self.weeks = [pd.Timestamp(w) for w in self.platform.weeks()]
             counts = self.platform.frame.groupby("state")["hospital_pk"].nunique()
-            self.states = [{"state": s, "hospitals": int(n)} for s, n in counts.items()]
+            self.states = sorted(
+                ({"state": s, "name": STATE_NAMES.get(s, s), "hospitals": int(n)}
+                 for s, n in counts.items()), key=lambda x: x["name"])
             self.ready = True
-            self.reset("TX" if "TX" in counts.index else counts.index[0], 0)
+            self.reset(DEFAULT_STATE if DEFAULT_STATE in counts.index else counts.index[0], 0)
         except Exception as exc:                      # shown in the console
             self.error = f"{exc}"
             traceback.print_exc()
@@ -97,7 +127,8 @@ class LiveEngine:
             out.update({
                 "states": self.states,
                 "weeks": [str(w.date()) for w in self.weeks],
-                "state": s.state, "week_idx": s.week_idx,
+                "state": s.state, "state_name": STATE_NAMES.get(s.state, s.state),
+                "week_idx": s.week_idx,
                 "week": str(self.weeks[s.week_idx].date()) if s.week_idx < len(self.weeks) else None,
                 "finished": s.week_idx >= len(self.weeks),
                 "history": s.history,
@@ -139,6 +170,7 @@ class LiveEngine:
             run = self.platform.run_week(s.state, wk, overrides)
             counter = self._without_steward(s.state, wk, overrides, injected)
             feed = self._feed(run, injected, counter)
+            stages = self._stages(run, injected, counter)
             t = run.totals
             s.history.append({
                 "week": run.week,
@@ -152,7 +184,7 @@ class LiveEngine:
                             "hospitals": run.hospitals, "proposals": run.proposals,
                             "responses": run.responses, "totals": run.totals,
                             "block": run.block},
-                    "feed": feed, "injected": injected, **self.status()}
+                    "feed": feed, "stages": stages, "injected": injected, **self.status()}
 
     def _apply_mistakes(self, state: str, wk: pd.Timestamp):
         """Corrupt the chosen reports, then let the Steward judge them afresh."""
@@ -187,17 +219,9 @@ class LiveEngine:
                              "level": level, "reasons": explain(flags)})
         return overrides, injected
 
-    def _without_steward(self, state, wk, overrides, injected) -> list[dict]:
-        """What the coordinator would have proposed had it believed the mistake."""
-        if not injected:
-            return []
+    def _believed_plan(self, state, wk, believe: dict):
+        """The coordinator's plan if it took the given reports at face value."""
         from ..agents.coordinator import RegionalCoordinatorAgent
-        believe = {}
-        for inj in injected:
-            u, b = inj["reported_used"], inj["reported_beds"]
-            occ = u / b if b else np.nan
-            believe[inj["id"]] = {"used": u, "beds": b, "level": "GREEN", "flags": 0,
-                                  "pred": occ, "hi": occ}
         g = self.platform.week_frame(state, wk, believe)
         coord = RegionalCoordinatorAgent(state, self.platform.params)
         ids = g["hospital_pk"].astype(str).to_numpy()
@@ -205,6 +229,45 @@ class LiveEngine:
                                 g["lat"].to_numpy(float), g["lon"].to_numpy(float),
                                 g["pred"].to_numpy(float), g["hi"].to_numpy(float),
                                 g["beds"].to_numpy(float), g["can_receive"].to_numpy(bool))
+        return ids, plan
+
+    @staticmethod
+    def _believe(hid: str, used: float, beds: float) -> dict:
+        occ = used / beds if beds else np.nan
+        return {hid: {"used": used, "beds": beds, "level": "GREEN", "flags": 0,
+                      "pred": occ, "hi": occ}}
+
+    def demo_pick(self, mistake: str = "lost_digit", limit: int = 40) -> dict:
+        """The hospital where this mistake, if believed, would misdirect the most patients.
+
+        Tried for real, this week, on every nearly full hospital in the state:
+        nothing is assumed. Used to pre-select the most instructive example.
+        """
+        s = self.session
+        wk = self.weeks[min(s.week_idx, len(self.weeks) - 1)]
+        g = self.platform.week_frame(s.state, wk)
+        occ = g["used"] / g["beds"]
+        cand = g[(g["level"] == "GREEN") & (occ >= 0.9) & (g["beds"] >= 40)]
+        cand = cand.assign(occ=occ).sort_values("occ", ascending=False).head(limit)
+        best = {"id": None, "would_receive": 0.0}
+        for r in cand.itertuples():
+            hid = str(r.hospital_pk)
+            u, b = MISTAKES[mistake][1](float(r.used), float(r.beds))
+            ids, plan = self._believed_plan(s.state, wk, self._believe(hid, u, b))
+            k = np.flatnonzero(ids == hid)
+            into = float(plan.amount[plan.receivers == k[0]].sum()) if len(k) else 0.0
+            if into > best["would_receive"]:
+                best = {"id": hid, "name": nice_name(r.name), "would_receive": round(into, 1)}
+        return best
+
+    def _without_steward(self, state, wk, overrides, injected) -> list[dict]:
+        """What the coordinator would have proposed had it believed the mistake."""
+        if not injected:
+            return []
+        believe = {}
+        for inj in injected:
+            believe.update(self._believe(inj["id"], inj["reported_used"], inj["reported_beds"]))
+        ids, plan = self._believed_plan(state, wk, believe)
         out = []
         for inj in injected:
             k = int(np.flatnonzero(ids == inj["id"])[0]) if (ids == inj["id"]).any() else -1
@@ -214,6 +277,191 @@ class LiveEngine:
             out.append({"id": inj["id"], "name": inj["name"], "would_receive": round(into, 1),
                         "would_send": round(outof, 1), "real_room": round(room, 1)})
         return out
+
+    # ---------------------------------------------------------------- stages
+    def _stages(self, run, injected, counter) -> list[dict]:
+        """One week as six steps a non-specialist can follow.
+
+        Every number here is read from the same run the feed and the ledger
+        describe; this only chooses what to say and how to say it.
+        """
+        theta = self.platform.params.theta
+        hs = run.hospitals
+        by_id = {h["id"]: h for h in hs}
+        state = STATE_NAMES.get(run.state, run.state)
+        inj_ids = {i["id"] for i in injected}
+        t = run.totals
+        pct = lambda x: f"{x:.0%}" if x is not None else "?"
+
+        def short(h):
+            return {"id": h["id"], "name": h["name"]}
+
+        # 1. Reports.
+        reported = [h for h in hs if h["level"] != "MISSING"]
+        fullest = sorted((h for h in reported if h["occupancy_now"] is not None
+                          and h["level"] != "RED"),
+                         key=lambda h: -h["occupancy_now"])[:3]
+        s1 = {"key": "report", "title": "Hospitals send their numbers",
+              "caption": (f"Every hospital in {state} tells the government how many beds it has "
+                          f"and how many patients are in them this week."),
+              "numbers": [{"label": "hospitals reported", "value": f"{len(reported)} of {len(hs)}"}],
+              "items": [{"text": f"{h['name']} is {pct(h['occupancy_now'])} full", "focus": [h["id"]]}
+                        for h in fullest],
+              "map": {"color": "now", "arcs": "none", "flags": False,
+                      "focus": [h["id"] for h in fullest]}}
+        for inj in injected:
+            s1["items"].insert(0, {"tone": "inject", "focus": [inj["id"]],
+                                   "text": (f"Mistake added on purpose: {inj['name']} says "
+                                            f"{inj['reported_used']:g} patients — really "
+                                            f"{inj['true_used']:g} ({inj['mistake'].lower()}).")})
+
+        # 2. Data Steward.
+        bad = [h for h in hs if h["level"] == "RED"]
+        bad.sort(key=lambda h: h["id"] not in inj_ids)
+        items2 = []
+        for h in bad[:5]:
+            codes = [r["code"] for r in h["reasons"] if r["level"] == "RED"]
+            why = PLAIN_REASON.get(codes[0], "the numbers cannot be right") if codes else "flagged"
+            mine = h["id"] in inj_ids
+            items2.append({"tone": "inject" if mine else "red", "focus": [h["id"]],
+                           "text": (f"Your mistake was caught — {h['name']}: {why}." if mine
+                                    else f"{h['name']}: {why}.")})
+        if len(bad) > 5:
+            items2.append({"text": f"…and {len(bad) - 5} more.", "focus": []})
+        for inj in injected:
+            if inj["level"] in ("GREEN", "AMBER"):
+                items2.insert(0, {"tone": "miss", "focus": [inj["id"]],
+                                  "text": (f"Missed: the mistake at {inj['name']} looks believable, "
+                                           f"so it is accepted. (Small mistakes can slip through.)")})
+        s2 = {"key": "check", "title": "The Data Steward checks every report",
+              "caption": ("Before anyone uses the numbers, a checker looks for reports that cannot be "
+                          "true. No patients will be sent to those hospitals this week, so a wrong "
+                          "number cannot send patients to the wrong place. (They can still get help, "
+                          "judged from their earlier, trustworthy reports.)"),
+              "numbers": [{"label": "reports set aside", "value": str(len(bad)), "tone": "red"},
+                          {"label": "reports OK", "value": str(len(reported) - len(bad))}],
+              "items": items2 or [{"text": "Every report looks believable this week.", "focus": []}],
+              "map": {"color": "now", "arcs": "none", "flags": True,
+                      "focus": [h["id"] for h in bad[:5]]}}
+
+        # 3. Forecast.
+        over = sorted((h for h in hs if h["forecast"] is not None and h["forecast"] > theta
+                       and h["level"] in ("GREEN", "AMBER")), key=lambda h: -h["forecast"])
+        room = [h for h in hs if h["forecast_hi"] is not None and h["forecast_hi"] < theta
+                and h["level"] in ("GREEN", "AMBER")]
+        s3 = {"key": "forecast", "title": "The Forecaster predicts next week",
+              "caption": (f"From each hospital's history it predicts how full it will be next week. "
+                          f"Above {theta:.0%} full is too full to be safe."),
+              "numbers": [{"label": "will be too full", "value": str(len(over)), "tone": "red"},
+                          {"label": "should have room", "value": str(len(room)), "tone": "green"}],
+              "items": [{"text": f"{h['name']}: expected {pct(h['forecast'])} full", "focus": [h["id"]],
+                         "tone": "red"} for h in over[:4]],
+              "map": {"color": "forecast", "arcs": "none", "flags": True,
+                      "focus": [h["id"] for h in over[:4]]}}
+
+        # 4. Plan.
+        props = sorted(run.proposals, key=lambda p: -p["patients_per_day"])
+        planned_total = sum(p["patients_per_day"] for p in props)
+        items4 = [{"focus": [p["from"], p["to"]],
+                   "text": (f"Move about {p['patients_per_day']:.0f} patients from {p['from_name']} "
+                            f"({pct(by_id[p['from']]['forecast'])}) to {p['to_name']} "
+                            f"({pct(by_id[p['to']]['forecast'])}), {p['km']:.0f} km away.")}
+                  for p in props[:4]]
+        if len(props) > 4:
+            items4.append({"text": f"…and {len(props) - 4} more suggestions.", "focus": []})
+        s4 = {"key": "plan", "title": "The state coordinator suggests moves",
+              "caption": (f"For each hospital that will be too full, it finds hospitals within "
+                          f"{self.platform.params.radius_km:.0f} km that should have room, and "
+                          f"suggests moving some patients there. It only suggests — it cannot order."),
+              "numbers": [{"label": "suggested moves", "value": str(len(props))},
+                          {"label": "patients", "value": f"{planned_total:.0f}"}],
+              "items": items4 or [{"text": "Nobody needs help this week, or nobody nearby has room.",
+                                   "focus": []}],
+              "map": {"color": "forecast", "arcs": "planned", "flags": True,
+                      "focus": list({x for p in props[:4] for x in (p["from"], p["to"])})}}
+
+        # 5. Answers.
+        verdicts = pd.Series([r["verdict"] for r in run.responses]).value_counts()
+        recv = sorted((r for r in run.responses if r["role"] == "receive"),
+                      key=lambda r: -r["proposed"])
+        items5 = []
+        for r in recv[:4]:
+            h = by_id.get(r["hospital"], {})
+            word = {"ACCEPT": "Yes", "PARTIAL": "Partly", "DECLINE": "No"}[r["verdict"]]
+            items5.append({"tone": {"Yes": "green", "Partly": "amber", "No": "grey"}[word],
+                           "focus": [r["hospital"]],
+                           "text": (f"{word} — {h.get('name', r['hospital'])}: asked to take about "
+                                    f"{r['proposed']:.0f}; "
+                                    + ("it really had room, so it said yes."
+                                       if word == "Yes" else
+                                       f"it was fuller than forecast, so it took {r['accepted']:.0f}."
+                                       if word == "Partly" else
+                                       "it turned out to be full, so it said no."))})
+        s5 = {"key": "answer", "title": "One week later, hospitals answer",
+              "caption": ("When the week arrives, each hospital checks its real numbers and says "
+                          "yes, partly or no. Nobody is ever pushed above the safe level."),
+              "numbers": [{"label": "yes", "value": str(int(verdicts.get("ACCEPT", 0))), "tone": "green"},
+                          {"label": "partly", "value": str(int(verdicts.get("PARTIAL", 0))), "tone": "amber"},
+                          {"label": "no", "value": str(int(verdicts.get("DECLINE", 0))), "tone": "grey"}],
+              "items": items5 or [{"text": "No suggestions to answer this week.", "focus": []}],
+              "map": {"color": "next", "arcs": "moved", "flags": True,
+                      "focus": [r["hospital"] for r in recv[:4]]}}
+
+        # 6. Result, with one worked example.
+        moved = [p for p in props if p["executed"] > 0.5]
+        story = None
+        if moved:
+            p = max(moved, key=lambda p: p["executed"])
+            a, b = by_id[p["from"]], by_id[p["to"]]
+            room_b = max(0.0, theta * (b["beds_next"] or 0) - (b["used_next"] or 0))
+            all_moved = p["executed"] >= p["patients_per_day"] - 0.5
+            story = {"from": short(a), "to": short(b), "km": round(p["km"]),
+                     "moved": round(p["executed"]),
+                     "text": (f"{a['name']} was expected to be {pct(a['forecast'])} full next week — "
+                              f"too full. {b['name']}, {p['km']:.0f} km away, was expected to be "
+                              f"{pct(b['forecast'])} full. The coordinator suggested moving about "
+                              f"{p['patients_per_day']:.0f} patients. A week later {b['name']} really "
+                              f"had room for {room_b:.0f}, so "
+                              + (f"all {p['executed']:.0f} could move." if all_moved
+                                 else f"about {p['executed']:.0f} could move."))}
+        above = t["overload_patient_days"] / 7
+        moved_n = t["moved_patient_days"] / 7
+        items6 = []
+        for c in counter:
+            if c["would_receive"] > 0.05:
+                items6.append({"tone": "saved", "focus": [c["id"]],
+                               "text": (f"Because the Data Steward set aside the wrong report, nobody "
+                                        f"was sent to {c['name']}. Believing it would have sent about "
+                                        f"{c['would_receive']:.0f} patients to a hospital that really "
+                                        f"had room for {c['real_room']:.0f}.")})
+            elif c["would_send"] > 0.05:
+                items6.append({"tone": "saved", "focus": [c["id"]],
+                               "text": (f"Believing the wrong report would have moved about "
+                                        f"{c['would_send']:.0f} patients out of {c['name']} for no reason.")})
+            else:
+                caught = any(i["id"] == c["id"] and i["level"] == "RED" for i in injected)
+                items6.append({"tone": "saved" if caught else "miss", "focus": [c["id"]],
+                               "text": ((f"The mistake at {c['name']} was caught. This week, believing it "
+                                         f"would not have changed the plan (no nearby hospital needed "
+                                         f"to send patients there), but it could have on a busier week.")
+                                        if caught else
+                                        f"The mistake at {c['name']} was not caught, but it did not "
+                                        f"change this week's plan.")})
+        items6.append({"tone": "ledger", "focus": [],
+                       "text": (f"Everything above was written into the audit log (week #{run.block['index'] + 1}, "
+                                f"{run.block['entries']} messages). Changing any of it later would be detected.")})
+        s6 = {"key": "result", "title": "Result for this week",
+              "caption": (f"{above:.0f} patients were going to be in hospitals that were too full. "
+                          f"About {moved_n:.0f} of them could have gone to a nearby hospital that "
+                          f"really had room."
+                          if above >= 0.5 else "No hospital was too full this week."),
+              "numbers": [{"label": "patients in too-full hospitals", "value": f"{above:.0f}", "tone": "red"},
+                          {"label": "could be moved", "value": f"{moved_n:.0f}", "tone": "green"},
+                          {"label": "share", "value": pct(t["share_absorbed"]) if t["share_absorbed"] is not None else "—"}],
+              "story": story, "items": items6,
+              "map": {"color": "next", "arcs": "moved", "flags": True,
+                      "focus": [story["from"]["id"], story["to"]["id"]] if story else []}}
+        return [s1, s2, s3, s4, s5, s6]
 
     # ---------------------------------------------------------------- feed
     def _feed(self, run, injected, counter) -> list[dict]:
@@ -333,6 +581,9 @@ def nice_name(name) -> str:
     """'ST LUKE'S HEALTH - BAYLOR' -> "St Luke's Health - Baylor" (keeps known acronyms)."""
     words = []
     for w in str(name).split(" "):
+        if w.count(".") >= 2 and len(w.replace(".", "")) <= 6 and w.replace(".", "").isalpha():
+            words.append(w.upper())                   # O.A.S.I.S., U.S.
+            continue
         if w.upper() in _KEEP_UPPER or (len(w) <= 3 and w.upper() not in ("ST", "MT", "FT", "DR")
                                         and w.isalpha()
                                         and not any(c in "AEIOUY" for c in w.upper())):

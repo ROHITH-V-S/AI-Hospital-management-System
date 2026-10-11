@@ -224,3 +224,31 @@ report.
   sealed; lost digit at a >95%-full hospital is caught, excluded and the
   prevented harm reported; injection lasts one week; tamper detected at the
   right block. Total 56 tests pass.
+
+## 2026-10-11 — Step 11: live console made understandable
+
+Team feedback: the live feed (~150 messages per week) was impossible to
+follow, and the state dropdown (postal codes + hospital counts) was unclear.
+
+- Each week is now six steps (report, check, forecast, plan, answer, result),
+  advanced with **Next step ›**; one plain sentence per step, big numbers, a
+  few named examples, and the map recoloured per step (this week / expected /
+  real next week). Built server-side in `LiveEngine._stages` from the same run
+  as the ledger, so the words cannot disagree with the numbers (test pins the
+  result total).
+- Map: numbered badges matching the text instead of overlapping names; zooms
+  to the hospitals involved from step 4 on.
+- Worked example per week (largest real move), using forecast figures so it
+  matches step 4.
+- Default state Arizona (74 hospitals; ran a real statewide transfer line).
+  States listed by full name; counts removed (they counted all-time hospitals,
+  which disagreed with the weekly map).
+- `demo_pick`: for every nearly full hospital, actually re-plans as if a
+  "digit missing" typo were believed and pre-selects the one where it would
+  misdirect the most patients (AZ week 1: Mercy Gilbert, ~24 patients).
+  Found because the first choice (Abrazo Central) honestly changed nothing.
+- Corrected wording: flagged hospitals are not *sent* patients but can still
+  be helped based on earlier trusted reports (the old caption said they were
+  left out entirely, which contradicted step 4).
+- Full message feed kept under "For experts".
+- 59 tests pass; UI smoke passes; checked with headless-Chrome screenshots.

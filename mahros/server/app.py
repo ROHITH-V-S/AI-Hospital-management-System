@@ -160,6 +160,12 @@ def live_hospitals():
     return JSONResponse(LIVE.hospitals())
 
 
+@app.get("/api/live/demo_pick")
+def live_demo_pick(mistake: str = "lost_digit"):
+    _live_ready()
+    return JSONResponse(LIVE.demo_pick(mistake))
+
+
 @app.post("/api/live/reset")
 def live_reset(state: str, week_idx: int = 0):
     _live_ready()
