@@ -53,6 +53,22 @@ global.fetch = async (url, opt) => {
     // The live console needs the local data cache; here we check it degrades cleanly.
     return { ok: true, json: async () => ({ ready: false, loading: false, error: "no data cache in smoke test" }) };
   }
+  if (url.startsWith("/api/resources/weeks")) {
+    return { ok: true, json: async () => ({ weeks: ["2023-11-19"], states: [{ state: "AZ", name: "Arizona" }] }) };
+  }
+  if (url.startsWith("/api/resources/plan")) {
+    const h = [{ id: "1", name: "A", city: "X", lat: 33.4, lon: -112, warned: true }, { id: "2", name: "B", city: "Y", lat: 33.5, lon: -112.1, warned: false }];
+    return { ok: true, json: async () => ({ state: "AZ", week: "2023-11-19", warned_hospitals: 1, hospitals: h,
+      patients: [{ from: "1", to: "2", from_name: "A", to_name: "B", amount: 4.2, km: 9.1, reason: "A is forecast at 96%." }],
+      staff: [{ from: "2", to: "1", from_name: "B", to_name: "A", amount: 2, km: 9.1, warned: true, reason: "A needs 50, has 48." }],
+      staff_summary: { short_hospitals: 1, nurses_short: 2, nurses_lent: 2 },
+      equipment: [{ item: "monitor", label: "Portable monitors", from: "2", to: "1", from_name: "B", to_name: "A", amount: 1, km: 9.1, warned: true, reason: "A has 19, needs 20." }],
+      equipment_summary: { monitor: { label: "Portable monitors", hospitals_short: 1, units_short: 1, units_moved: 1 } },
+      params: { staff_radius_km: 60, equipment_radius_km: 100 } }) };
+  }
+  if (url.startsWith("/api/resources/inventory")) {
+    return { ok: true, json: async () => ([{ id: 1, hospital: "1", name: "A", item: "ventilator", units: 20, updated_by: "seed estimate" }]) };
+  }
   if (url.startsWith("/api/warning/weeks")) {
     return { ok: true, json: async () => ({ state: "AZ", weeks: [{ week: "2023-11-19", warnings: 1 }, { week: "2022-12-04", warnings: 0 }] }) };
   }

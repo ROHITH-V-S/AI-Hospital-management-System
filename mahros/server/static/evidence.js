@@ -114,3 +114,30 @@ async function renderEvWarning(){
       <li>Areas overlap, so the scores are not independent; ranges come from resampling whole states.</li>
       <li>It was trained on the COVID-19 years. How it would do in a new kind of wave is unknown.</li></ul></div>`;
 }
+
+// ---------------------------------------------------------------- EVIDENCE 6: staffing direction check
+async function renderEvStaff(){
+  const s = await get("staffing_check.json");
+  const A = s.periods["2020-08..2022-12"], B = s.periods["2023-01..2024-04"];
+  $("#es-answer").textContent = `Only weakly, and only while hospitals were answering. In 2020–22, when ${pct(A.median_answered_share, 0)} of hospitals answered the staffing question, our estimate and the real reports moved in the same direction in ${A.states_positive} of ${A.states_tested} states, but weakly (median correlation over time ${A.within_state_spearman_median.toFixed(2)}). In 2023–24, when ${pct(B.median_answered_share, 0)} answered, there was no relationship (${B.within_state_spearman_median.toFixed(2)}). And the levels differ: ${pct(A.mean_real_share, 0)} of hospitals really reported a shortage in an average week, our estimate flagged ${pct(A.mean_est_share, 1)}.`;
+  const nat = s.national_weekly;
+  const chart = lineChart([
+    {points: nat.map(r => [new Date(r.week), r.real_share]), color: css("--red")},
+    {points: nat.map(r => [new Date(r.week), r.est_share]), color: css("--chart1")}],
+    {h: 230, ymin: 0, yfmt: v => (100 * v).toFixed(0) + "%"});
+  const row = (n, P) => `<tr><td>${esc(n)}</td><td class="n">${pct(P.median_answered_share, 0)}</td><td class="n">${num(P.state_weeks)}</td><td class="n">${P.within_state_spearman_median.toFixed(2)}</td><td class="n small muted">${P.within_state_spearman_iqr.map(x => x.toFixed(2)).join(" to ")}</td><td class="n">${P.states_positive} of ${P.states_tested}</td><td class="n">${P.pooled_spearman.toFixed(2)}</td><td class="n">${pct(P.mean_real_share, 1)}</td><td class="n">${pct(P.mean_est_share, 1)}</td></tr>`;
+  const lags = Object.entries(A.lag_median_spearman).sort((a, b) => +a[0] - +b[0]);
+  $("#es-body").innerHTML = `
+    <div class="banner sim"><b>Estimate vs real.</b> No public data reports staff per hospital, so MAHROS estimates each hospital's nurses from its usual staffed beds (ICU 1:2, ward 1:5) and flags a hospital as short when this week's patients need more. The only real staffing signal is state-level: how many hospitals said "critical staffing shortage today" (HHS g62h-syeh). This checks whether the two point the same way — not whether any one hospital's number is right.</div>
+    <h2>Share of hospitals short of staff, national weekly average</h2>
+    <div class="card">${chart}<div class="legend"><span><i style="background:var(--red)"></i>Real: share of answering hospitals reporting a critical shortage</span><span><i style="background:var(--chart1)"></i>Estimated: share of hospitals our estimate flags as short</span></div></div>
+    <h2>Do they move together, state by state?</h2>
+    <div class="card"><table><tr><th>Period</th><th class="n">Hospitals answering</th><th class="n">State-weeks</th><th class="n">Correlation over time (median state)</th><th class="n">Middle half of states</th><th class="n">States positive</th><th class="n">Pooled</th><th class="n">Real share</th><th class="n">Estimated share</th></tr>
+      ${row("2020-08 to 2022-12", A)}${row("2023-01 to 2024-04", B)}</table>
+      <p class="small muted" style="margin:8px 0 0">Spearman rank correlation. Lead or lag (2020–22, median state): ${lags.map(([k, v]) => `${k > 0 ? "+" : ""}${k} wk ${v.toFixed(2)}`).join(" · ")} — flat, so neither series clearly leads.</p></div>
+    <div class="not"><b>What this does not show</b><ul>
+      <li>It says nothing about any single hospital's staff numbers; those remain estimates.</li>
+      <li>Real shortages also come from absences and vacancies, which bed counts cannot see — a likely reason the estimate flags far fewer hospitals than really reported shortages.</li>
+      <li>From 2023 most hospitals stopped answering the staffing question, so the real series became too thin to check against.</li>
+      <li>Use the staff-loan plan as a way to organise lending, not as a measurement of who is short.</li></ul></div>`;
+}

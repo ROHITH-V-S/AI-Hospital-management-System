@@ -374,3 +374,56 @@ def warning_week(state: str = "AZ", week: str = "2023-12-17"):
         return JSONResponse(store.week_view(_db(), state, week))
     except ValueError as exc:
         raise HTTPException(400, str(exc))
+
+
+# --------------------------------------------------------------------------- #
+# Staff & equipment: the combined weekly orchestration plan
+# --------------------------------------------------------------------------- #
+
+def _surge_threshold() -> float:
+    p = ROOT / "results" / "surge_warning.json"
+    return json.loads(p.read_text())["methods"]["model"]["threshold"] if p.exists() else 1.01
+
+
+@app.get("/api/resources/weeks")
+def resources_weeks():
+    _live_ready()
+    from .live import STATE_NAMES
+    states = [{"state": s, "name": STATE_NAMES.get(s, s)} for s in sorted(LIVE.platform.states(), key=lambda x: STATE_NAMES.get(x, x))]
+    return JSONResponse({"weeks": [str(w.date()) for w in LIVE.weeks], "states": states})
+
+
+@app.get("/api/resources/plan")
+def resources_plan(state: str = "AZ", week: str = "2023-11-19"):
+    _live_ready()
+    from ..resources.store import build_plan
+    from ..surge.store import _st
+    try:
+        return JSONResponse(build_plan(_db(), LIVE.platform, _st(state), week, _surge_threshold()))
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(400, str(exc))
+
+
+@app.post("/api/resources/commit")
+def resources_commit(state: str = "AZ", week: str = "2023-11-19"):
+    _live_ready()
+    from ..resources.store import build_plan, commit_plan
+    from ..surge.store import _st
+    plan = build_plan(_db(), LIVE.platform, _st(state), week, _surge_threshold())
+    return JSONResponse(commit_plan(_db(), _book(), plan))
+
+
+@app.get("/api/resources/inventory")
+def resources_inventory(state: str = "AZ"):
+    from ..resources.store import inventory
+    from ..surge.store import _st
+    return JSONResponse(inventory(_db(), _st(state)))
+
+
+@app.post("/api/resources/inventory")
+def resources_set(row_id: int, units: int):
+    from ..resources.store import set_units
+    try:
+        return JSONResponse(set_units(_db(), _book(), row_id, units))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))

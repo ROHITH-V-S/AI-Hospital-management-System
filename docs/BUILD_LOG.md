@@ -515,3 +515,60 @@ definition, alert merging.
   test failing (`location` missing in the fake DOM, no fake warning API);
   `| tail` hid node's exit code. Harness fixed; smoke passes (51 elements).
   From now on the smoke test is run on its own and its exit code checked.
+
+## 2026-10-11 — Step 16 (Phase 5): staff and equipment
+
+**Why.** Team flaw #5: resource optimisation was patients only.
+
+**Staff** (`mahros/resources/staff.py`, loader → `staff_pools`, 412,169
+hospital-weeks from 2022-06-26): pool = what the hospital's **usual** staffed
+beds need (median of its previous 12 trusted weeks; causal) at California
+Title 22 ratios (ICU 1:2, ward 1:5); intensivists 1:14 (Ward et al., Crit
+Care Med 2013 — the task force set no fixed maximum; worse than 1:14 linked
+to harm in academic ICUs); ward physicians 1:15 (assumption). Need = this
+week's patients at the same ratios. Labelled `estimated` everywhere.
+
+**Direction check against the REAL state series** (`experiments/staffing_check.py`):
+
+| Period | Hospitals answering | Median within-state Spearman | States positive | Real share short | Estimated share short |
+|---|---|---|---|---|---|
+| 2020-08..2022-12 | 88% | 0.24 (IQR 0.05–0.37) | 35 of 47 | 13.9% | 2.1% |
+| 2023-01..2024-04 | 14% | 0.03 | 22 of 41 | 12.7% | 1.6% |
+
+Honest reading: weak agreement in direction while hospitals answered, none
+after; the estimate flags ~7× fewer hospitals than really reported
+shortages (it only sees "more patients than usual beds", not absences or
+vacancies). Lead/lag curve flat (0.21–0.24): no lead.
+
+**Equipment** (`mahros/resources/equipment.py`): state-ENTERED inventory
+(ventilators, ECMO, ICU dialysis, portable monitors), seeded ONCE with
+labelled estimates (20,156 rows; never overwritten — tested); editable on
+screen, each edit logged in the record book (not as a vouched record: a
+count is meant to change). All usage ratios are assumptions; no research
+claim rests on equipment.
+
+**Optimiser** (`mahros/resources/optimize.py`): weighted transportation LP
+(HiGHS); lenders keep their own need + 1; surge-warned hospitals weighted
+×1.5; integer rounding never exceeds either side (tested).
+
+**Combined weekly orchestration plan** (`mahros/resources/store.py`,
+`/api/resources/*`): patients (the RQ3 planner), nurse loans (≤ 60 km),
+equipment moves (≤ 100 km), every line with a plain reason; "Make this
+week's plan" writes `patient_moves` / `staff_loans` / `equipment_moves`
+with record cross-checks and seals one record-book page (verified).
+Example AZ 2023-11-19: 21 patient moves, 4 nurses lent to cover 3
+hospitals estimated short, 1 monitor moved, 17 hospitals in warned areas.
+
+**UI.** Tab "Staff & equipment": three sections with labels
+observed / estimated / entered, map zoomed to where things move (click a
+line to show just that move), inventory editor. Evidence → 6: chart of real
+vs estimated share short, table above, lead/lag.
+
+**Fixes during build.** JSON `null` capability crashed the seed → guarded.
+An equipment reason said "has 19, needs about 19" for a shortfall (the
+rounded, buffered need was 20) → reasons show the exact numbers used. The
+map at state scale hid the moves → zoom + clickable lines. Two hand-typed
+figures ("about 7 times") → computed from the results file. Unsupported
+wording ("shortages are mostly about people") softened.
+
+**Tests.** `tests/test_resources.py` (6).
