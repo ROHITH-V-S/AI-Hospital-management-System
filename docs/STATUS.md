@@ -10,16 +10,11 @@ Branch `trust-aware-rebuild`. Nothing pushed.
 | 3 Emergency transfer | done | 8dd12ed |
 | 4 Surge early warning | done | a5c5d9a, 165ef20 |
 | 5 Staff + equipment | done | 692d170 |
-| 6 Command-centre UI | **mostly done**, see below | (WIP commit) |
+| 6 Command-centre UI | done (checked in Docker) | see git log |
 | 7 Docs, tests, verification | **not started** | |
 
-## To finish Phase 6
-0. `node tests/ui_smoke.js` FAILS at the WIP commit: add fake `/api/trust` and `/api/trust/bids` responses (and `/api/resources/weeks` is already mocked) so `renderDataTrust` runs; re-check exit code.
-1. Look at the 400-px screenshot of the Emergency tab after the `minmax(0,1fr)` fix; fix any remaining overflow.
-2. Screenshot "This week" (`?tab=live&steps=6&inject=lost_digit`), Evidence 1–3, Limits.
-3. Check the resources map click-to-zoom (lines in `static/resources.js`).
-4. Rebuild Docker (`docker compose build && docker compose run --rm loader --force`? — loader has `--force`; the derived steps surge/staff/equipment have NOT yet been run against Postgres) and check every tab on http://localhost:8080, plus the real pgAdmin tamper demo (edit `bids.travel_min`, press Verify log).
-5. Commit Phase 6.
+## Phase 6
+Done 2026-10-12 — see BUILD_LOG Step 18. Not verified: layouts narrower than 500 px; clicking through pgAdmin's own GUI.
 
 ## Phase 7 (all to do)
 - README (Docker quick start already in; update findings with emergency/surge/staff numbers), REVIEW_GUIDE (3-minute demo: Emergency → Early warning → Staff & equipment → pgAdmin tamper; Q&A: why not just phone, where is the multi-agent part, is it real-time, what is simulated), METHODS (sections for emergency, surge, staffing), DATA_PROVENANCE (every new field: ED/COVID/flu fields, OSRM AZ/MA, POS Q3 2022, state staffing, estimated staff, entered equipment, every emergency parameter from `mahros/emergency/params.py`).

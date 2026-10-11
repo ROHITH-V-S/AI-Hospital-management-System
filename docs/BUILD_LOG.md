@@ -585,3 +585,26 @@ yet checked**. A bad scripted edit corrupted core.js; restored from git and
 redone by exact edits.
 
 **Next (see docs/STATUS.md):** finish Phase 6 checks, then Phase 7.
+
+## 2026-10-12 — Step 18 (Phase 6 finished): checked end to end in Docker
+
+- UI smoke test fixed (Data-trust mocks); passes, 74 elements.
+- `docker compose build` + `loader --force` on PostgreSQL: all derived steps
+  ran for the first time on Postgres — surge 425,091 area-weeks / 46,622
+  merged alerts, staff 412,169 hospital-weeks, equipment 20,156 rows, 89 s.
+- **Two bugs only PostgreSQL showed** (COPY returns a blank → NaN, SQLite
+  returns text): JSON capability parsing in the equipment seed, and a NaN
+  city in the resources plan. Both fixed.
+- Every tab screenshotted from http://localhost:8080 (data source:
+  database): Emergency (all 5 steps), This week, Early warning (with
+  "what really happened"), Staff & equipment, Data trust, Audit log,
+  Evidence, Limits, About. Fixed: stale step-2 legend on later Emergency steps.
+- "Phone-width overflow" was a test artefact: headless Chrome will not lay
+  out narrower than ~500 px; at 500 px the page fits exactly. Widths below
+  500 px are NOT verified.
+- **Real tamper demo on PostgreSQL** (same SQL as pgAdmin's Save): verify
+  green → `UPDATE bids SET travel_min = travel_min + 30` → red, naming
+  "bid #70 … now says 155.71, but the record book wrote 125.71 at
+  2024-01-08T10:44:54 (line #588)" → undo → green. pgAdmin answers on :5050
+  (the click-through in its GUI was not automated).
+- Tests: 106 passed, 0 skipped (with the Postgres URLs set).

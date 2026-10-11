@@ -61,7 +61,8 @@ def seed_equipment(engine, df: pd.DataFrame) -> str:
     caps = read_frame(engine, "SELECT hospital_pk, capability FROM hospitals WHERE capability IS NOT NULL")
     cardiac = set()
     for r in caps.itertuples():
-        c = r.capability if isinstance(r.capability, dict) else json.loads(r.capability or "null")
+        # SQLite returns JSON text, PostgreSQL (via COPY) text or a blank (NaN) for no value.
+        c = r.capability if isinstance(r.capability, dict) else             json.loads(r.capability) if isinstance(r.capability, str) and r.capability else None
         if c and (c.get("OPEN_HRT_SRGRY_SRVC_CD") or "").strip() in ("1", "3"):
             cardiac.add(str(r.hospital_pk))
     now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -171,7 +172,7 @@ def build_plan(engine, platform, state: str, week: str, surge_threshold: float) 
                                              + ("; +15% because its area has a surge warning" if warn[j] else "")
                                              + f"); {nm(a.hospital_pk)} has {units[i]}, needs {units[i] - int(surplus[i]) - EQ.KEEP_SPARE} "
                                              f"and keeps one spare.")})
-    hospitals = [{"id": pk, "name": nm(pk), "city": (H.loc[pk, "city"] or "").title(), "lat": H.loc[pk, "lat"],
+    hospitals = [{"id": pk, "name": nm(pk), "city": H.loc[pk, "city"].title() if isinstance(H.loc[pk, "city"], str) else "", "lat": H.loc[pk, "lat"],
                   "lon": H.loc[pk, "lon"], "warned": pk in warned} for pk in H.index]
     return {"state": state, "week": wk, "warned_hospitals": len(warned), "patients": patients,
             "staff": staff, "staff_summary": staff_summary, "equipment": equipment,

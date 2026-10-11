@@ -167,6 +167,7 @@ function emShow(){
   if ($("#em-back")) $("#em-back").onclick = () => { EM.stage -= 1; emShow(); };
   if ($("#em-new")) $("#em-new").onclick = () => { emIntro(); };
   emBaseMap(Object.assign({badges: b, focus: [o, ...Object.keys(b)], onPick: null}, map));
+  emLegend();
   if (legendExtra) $("#em-legend").innerHTML = legendExtra + `<span class="muted">· other dots: ICU fullness this week</span>`;
   $("#em-map-title").textContent = `${EM.status.state_name} · ${r.requested_at}` + ((map.zoom || []).length ? " · zoomed in" : "");
 }

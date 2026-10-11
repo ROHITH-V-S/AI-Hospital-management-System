@@ -53,6 +53,14 @@ global.fetch = async (url, opt) => {
     // The live console needs the local data cache; here we check it degrades cleanly.
     return { ok: true, json: async () => ({ ready: false, loading: false, error: "no data cache in smoke test" }) };
   }
+  if (url.startsWith("/api/trust/bids")) {
+    return { ok: true, json: async () => ([{ bid: 7, request: 3, name: "A", note: "it offers an ICU bed, but its weekly report says its ICU is 100% full — confirm by phone", at: "2024-01-08T11:02:00", state: "AZ" }]) };
+  }
+  if (url.startsWith("/api/trust")) {
+    return { ok: true, json: async () => ({ state: "AZ", week: "2023-11-19", counts: { GREEN: 60, AMBER: 1, RED: 1, MISSING: 7 },
+      flagged: [{ id: "1", name: "A", city: "X", level: "RED", used: 40, beds: 4, why: ["it reports more patients than it has beds — impossible"] },
+                { id: "2", name: "B", city: "Y", level: "AMBER", used: 30, beds: 50, why: ["partial week"] }] }) };
+  }
   if (url.startsWith("/api/resources/weeks")) {
     return { ok: true, json: async () => ({ weeks: ["2023-11-19"], states: [{ state: "AZ", name: "Arizona" }] }) };
   }
