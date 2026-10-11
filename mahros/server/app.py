@@ -346,3 +346,31 @@ def emergency_find(state: str, origin: str, need: str, acuity: str = "critical")
         return JSONResponse(em.find_bed(state, origin, need, acuity))
     except (ValueError, StopIteration) as exc:
         raise HTTPException(400, str(exc) or "unknown hospital")
+
+
+# --------------------------------------------------------------------------- #
+# Surge early warning (real weekly reports)
+# --------------------------------------------------------------------------- #
+
+def _db():
+    if DB is None or DB_ERROR:
+        raise HTTPException(503, DB_ERROR or "database not available")
+    return DB
+
+
+@app.get("/api/warning/weeks")
+def warning_weeks(state: str = "AZ"):
+    from ..surge import store
+    try:
+        return JSONResponse({"state": state, "weeks": store.weeks(_db(), state)})
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
+
+@app.get("/api/warning")
+def warning_week(state: str = "AZ", week: str = "2023-12-17"):
+    from ..surge import store
+    try:
+        return JSONResponse(store.week_view(_db(), state, week))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))

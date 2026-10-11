@@ -455,3 +455,59 @@ counts, red-but-bidding hospitals explained (weekly average vs now).
 **Tests.** `tests/test_emergency.py` (14), `tests/test_emergency_live.py` (3:
 every answer has a reason, bids logged, editing a logged bid is caught, the
 phone what-if never touches the live world).
+
+## 2026-10-11 — Step 15 (Phase 4): surge early warning (real data)
+
+**Why.** Team idea #6. Symptom-level data (CDC syndromic surveillance) is not
+public, so this is a **surge early warning** for hospital capacity — never
+called "pandemic prediction".
+
+**Data facts checked first.** After 2023-06-11 ED visits are present in only
+~46% of facility reports (CDC made them optional); COVID admissions ~72%
+(the rest are CDC-withheld counts < 4, entered in area totals as 2 —
+derived); flu admissions ~80%.
+
+**What** (`mahros/surge/`, `experiments/surge_warning.py`):
+- Area = hospital + every hospital within 50 km (4,705 areas). Weekly,
+  causal signals from trusted reports: area occupancy and its 1/2-week change,
+  ICU occupancy, COVID / flu admission growth and rate, ED growth, share of
+  hospitals rising ≥ 3 points.
+- Target: area reaches **85%** at t+1 or t+2. Train 2020-08..2022-06,
+  calibrate alarm levels 2022-07..2022-12, test 2023-01..2024-04.
+- Baselines (alarm levels tuned on calibration only): already near 85%;
+  2-week trend; "k neighbours rising together" + admissions rising.
+- Loader stores `surge_signals` (425,091 area-weeks) and merged
+  `surge_alerts` (one per area per state-week, 50 km greedy merge).
+
+**Results** (test, areas below 85% now; 2.8% of them crossed within 2 weeks):
+
+| Method | Warnings that came true | Surges caught | F1 | Warned ≥ 1 week ahead |
+|---|---|---|---|---|
+| Model | 40% | 58% | 0.47 | 48% |
+| Already near 85% | 37% | 44% | 0.40 | 47% |
+| Trend | 14% | 38% | 0.21 | 69% |
+| Neighbours rising | 6% | 40% | 0.11 | 69% |
+| Model without ED | 45% | 49% | 0.47 | 38% |
+
+Model − best simple rule: +7.1 F1 points (95% CI 6.0–8.3, resampling states).
+Honest reading: modest. Most skill is the area's own occupancy and its
+change; ED visits add nothing; half of real surges (52% of 1,692 crossing
+events) came with no warning; the "neighbours rising together" rule the
+spec proposed is weak. Sweep: 80% line F1 0.53 vs 0.41, 90% line 0.47 vs 0.38.
+
+**UI.** Tab "Early warning": state, week (each labelled with its number of
+warnings; starts on the busiest test week), warnings (areas still below 85%)
+separated from areas already over 85% (status, not a warning), map coloured
+by chance of crossing, and **"Show what really happened 2 weeks later"**
+which marks hits and misses. Evidence → 5: full table, CIs, sweep, monthly
+chart, importance in plain words, the 10 biggest named misses.
+
+**Fixes during build.** The first screen listed areas already at 100% as
+"alerts" → split into warnings vs status. Default week showed no warnings →
+busiest test week. A hand-typed "about half" sentence → read from results.
+A drafted claim "the test period had milder waves" was **false** (15.7% of
+test area-weeks above 85% vs 12.7% in training) and was removed.
+
+**Tests.** `tests/test_surge.py` (5): radius, causality (rewriting the
+future leaves earlier signals unchanged), RED reports excluded, target
+definition, alert merging.

@@ -61,3 +61,56 @@ async function renderEvEmergency(){
       <li>Ambulance availability, traffic and the time to stabilise a patient before transport are not modelled; they are the same for both methods.</li>
       <li>Hospitals answer honestly from their simulated state. The model does not study hospitals hiding beds.</li></ul></div>`;
 }
+
+// ---------------------------------------------------------------- EVIDENCE 5: surge early warning (real data)
+async function renderEvWarning(){
+  const w = await get("surge_warning.json");
+  const M = w.methods, mo = M.model, nt = M.near_threshold, cmp = w.comparisons.model_vs_near_threshold;
+  const name = {near_threshold: "Simple rule: area already close to 85%", trend: "Simple rule: occupancy trend projected 2 weeks",
+                neighbours: "Simple rule: many neighbouring hospitals rising together", model: "MAHROS model (all signals)",
+                model_without_ed: "MAHROS model without ED visits", model_without_admissions: "MAHROS model without COVID/flu admissions"};
+  const better = cmp.ci95[0] > 0;
+  $("#ew-answer").textContent = `Partly. On 2023–24 weeks the model never saw, it caught ${pct(mo.test_onset.recall, 0)} of areas that went from below 85% to above it within 2 weeks, and ${pct(mo.test_onset.precision, 0)} of its warnings came true. ` +
+    (better ? `That is ${(100 * cmp.diff).toFixed(0)} F1 points better than the best simple rule (95% range ${(100 * cmp.ci95[0]).toFixed(0)}–${(100 * cmp.ci95[1]).toFixed(0)}), ` : `That is not clearly better than the best simple rule, `) +
+    `but only ${pct(mo.lead.warned_1_week_or_more, 0)} of surges were warned at least a week ahead.`;
+  const row = k => { const r = M[k], o = r.test_onset, L = r.lead;
+    return `<tr${k === "model" ? ' style="font-weight:650"' : ""}><td>${esc(name[k])}</td><td class="n">${pct(o.precision, 0)}</td><td class="n">${pct(o.recall, 0)}</td><td class="n">${o.f1.toFixed(2)}</td><td class="n">${num(o.alerts)}</td><td class="n">${pct(L.warned_1_week_or_more, 0)}</td><td class="n">${pct(L.warned_2_weeks, 0)}</td></tr>`; };
+  const months = w.monthly;
+  const chart = lineChart([
+    {points: months.map(r => [new Date(r.month + "-01"), r.areas_above_85]), color: css("--red")},
+    {points: months.map(r => [new Date(r.month + "-01"), r.alerts_share]), color: css("--chart1")}],
+    {h: 220, ymin: 0, yfmt: v => (100 * v).toFixed(0) + "%"});
+  const sw = w.threshold_sweep;
+  const PLAIN = {area_occ: "How full the area is now", area_occ_d2: "Change over the last 2 weeks", area_occ_d1: "Change over the last week",
+                 woy_sin: "Time of year", woy_cos: "Time of year (2)", log_area_beds: "Size of the area (beds)", n_neighbours: "Number of hospitals in the area",
+                 area_icu_occ: "How full the area's ICUs are", area_icu_d1: "ICU change over the last week", covid_adm_growth: "Growth in COVID-19 admissions",
+                 flu_adm_growth: "Growth in flu admissions", ed_growth: "Growth in ED visits", covid_adm_per_100beds: "COVID-19 admissions per 100 beds",
+                 flu_adm_per_100beds: "Flu admissions per 100 beds", rising_share: "Share of hospitals rising", rising_neighbours: "Hospitals rising"};
+  const imp = Object.entries(w.importance || {}).filter(([k]) => k !== "error").slice(0, 6).map(([k, v]) => [PLAIN[k] || k, v]);
+  $("#ew-body").innerHTML = `
+    <div class="banner real"><b>Real data, no simulation.</b> ${num(w.rows.neighbourhoods)} areas (a hospital and every hospital within ${w.definition.radius_km} km), weekly. Trained ${w.split.train[0]}–${w.split.train[1]}, alarm level set on ${w.split.calib[0]}–${w.split.calib[1]}, tested ${w.split.test[0]}–${w.split.test[1]}.</div>
+    <h2>Areas below 85% now: who reached 85% within 2 weeks? (test period)</h2>
+    <div class="card"><table><tr><th>Method</th><th class="n">Warnings that came true</th><th class="n">Surges caught</th><th class="n">F1</th><th class="n">Warnings issued</th><th class="n">Surges warned ≥1 week ahead</th><th class="n">2 weeks ahead</th></tr>
+      ${["model", "near_threshold", "trend", "neighbours", "model_without_ed", "model_without_admissions"].map(row).join("")}</table>
+      <p class="small muted" style="margin:8px 0 0">${num(w.rows.test_onset)} area-weeks below 85% in the test period; ${pct(w.onset_base_rate_test, 1)} of them reached 85% within 2 weeks. "Surges" = ${num(mo.lead.events)} moments when an area crossed 85% after 4 weeks below. Every alarm level was chosen on the calibration weeks, never on the test weeks.</p></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card"><h3>Is the model better than the simple rules?</h3><table><tr><th>Model minus…</th><th class="n">F1 difference</th><th class="n">95% range</th></tr>
+        ${Object.entries(w.comparisons).map(([k, v]) => `<tr><td>${esc(name[k.replace("model_vs_", "")])}</td><td class="n">${(100 * v.diff).toFixed(1)} pts</td><td class="n small muted">${(100 * v.ci95[0]).toFixed(1)} to ${(100 * v.ci95[1]).toFixed(1)}</td></tr>`).join("")}</table>
+        <p class="small muted" style="margin:6px 0 0">Ranges from resampling whole states (areas inside a state overlap).</p></div>
+      <div class="card"><h3>Does it depend on the 85% line?</h3><table><tr><th>Line</th><th class="n">Model F1</th><th class="n">Simple rule F1</th><th class="n">Share that crossed</th></tr>
+        ${Object.entries(sw).map(([k, v]) => `<tr><td>${pct(+k, 0)}</td><td class="n">${v.model.f1.toFixed(2)}</td><td class="n">${v.near_threshold.f1.toFixed(2)}</td><td class="n">${pct(v.onset_base_rate, 1)}</td></tr>`).join("")}
+        <tr><td><b>85% (used)</b></td><td class="n"><b>${mo.test_onset.f1.toFixed(2)}</b></td><td class="n">${nt.test_onset.f1.toFixed(2)}</td><td class="n">${pct(w.onset_base_rate_test, 1)}</td></tr></table></div>
+    </div>
+    <h2>Month by month in the test period</h2>
+    <div class="card">${chart}<div class="legend"><span><i style="background:var(--red)"></i>Areas over 85% full</span><span><i style="background:var(--chart1)"></i>Areas flagged by the model (including those already over 85%)</span></div></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card"><h3>What the model leans on</h3><p class="small muted" style="margin:0 0 6px">Drop in ranking quality when one signal is shuffled (bigger = more important).</p><table>${imp.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${v.toFixed(3)}</td></tr>`).join("")}</table>
+        <p class="small muted" style="margin:6px 0 0">Mostly the area's own occupancy and its recent change. ED visits were present for ${pct(w.ed_available_share_test, 0)} of test area-weeks (at least one hospital in the area still reported them); removing them did not change the result.</p></div>
+      <div class="card"><h3>Biggest surges it missed (by area size)</h3>${w.largest_misses.map(m => `<div class="prop">${esc(nicePk(m.centre))}, ${esc(nicePk(m.city))}, ${esc(m.state)} — week of ${esc(m.week)}</div>`).join("")}</div>
+    </div>
+    <div class="not"><b>What this does not show</b><ul>
+      <li>It is a warning about hospital capacity from hospital reports. It cannot see an outbreak in the community before patients arrive; symptom data is not public.</li>
+      <li>Most of its skill comes from occupancy that is already high and rising. Sudden jumps with no build-up are missed.</li>
+      <li>Areas overlap, so the scores are not independent; ranges come from resampling whole states.</li>
+      <li>It was trained on the COVID-19 years. How it would do in a new kind of wave is unknown.</li></ul></div>`;
+}
