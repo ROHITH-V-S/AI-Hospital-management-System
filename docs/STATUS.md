@@ -14,6 +14,7 @@ Branch `trust-aware-rebuild`. Nothing pushed.
 | 7 Docs, tests, verification | **not started** | |
 
 ## To finish Phase 6
+0. `node tests/ui_smoke.js` FAILS at the WIP commit: add fake `/api/trust` and `/api/trust/bids` responses (and `/api/resources/weeks` is already mocked) so `renderDataTrust` runs; re-check exit code.
 1. Look at the 400-px screenshot of the Emergency tab after the `minmax(0,1fr)` fix; fix any remaining overflow.
 2. Screenshot "This week" (`?tab=live&steps=6&inject=lost_digit`), Evidence 1–3, Limits.
 3. Check the resources map click-to-zoom (lines in `static/resources.js`).
