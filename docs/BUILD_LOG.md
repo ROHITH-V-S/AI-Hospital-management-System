@@ -511,3 +511,7 @@ test area-weeks above 85% vs 12.7% in training) and was removed.
 **Tests.** `tests/test_surge.py` (5): radius, causality (rewriting the
 future leaves earlier signals unchanged), RED reports excluded, target
 definition, alert merging.
+- **Correction after commit a5c5d9a:** that commit went in with the UI smoke
+  test failing (`location` missing in the fake DOM, no fake warning API);
+  `| tail` hid node's exit code. Harness fixed; smoke passes (51 elements).
+  From now on the smoke test is run on its own and its exit code checked.

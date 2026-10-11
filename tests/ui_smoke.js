@@ -41,6 +41,7 @@ global.document = {
 };
 global.getComputedStyle = () => ({ getPropertyValue: () => "#000" });
 global.localStorage = { getItem: () => null, setItem() {} };
+global.location = { search: "" };
 global.fetch = async (url, opt) => {
   if (url.startsWith("/ui/")) {
     const p = path.join(UI, url.slice(4));
@@ -51,6 +52,16 @@ global.fetch = async (url, opt) => {
   if (url.startsWith("/api/live/status")) {
     // The live console needs the local data cache; here we check it degrades cleanly.
     return { ok: true, json: async () => ({ ready: false, loading: false, error: "no data cache in smoke test" }) };
+  }
+  if (url.startsWith("/api/warning/weeks")) {
+    return { ok: true, json: async () => ({ state: "AZ", weeks: [{ week: "2023-11-19", warnings: 1 }, { week: "2022-12-04", warnings: 0 }] }) };
+  }
+  if (url.startsWith("/api/warning")) {
+    return { ok: true, json: async () => ({ state: "AZ", week: "2023-11-19", threshold: 0.85, radius_km: 50,
+      hospitals: [{ id: "1", name: "A", city: "X", lat: 33.4, lon: -112, area_occ: 0.83, d2: -0.01, p: 0.79, n: 8, rising: 1, next_peak: 0.87 },
+                  { id: "2", name: "B", city: "Y", lat: 32.2, lon: -110.9, area_occ: 0.9, d2: 0.0, p: 0.95, n: 7, rising: 0, next_peak: null }],
+      alerts: [{ id: "1", rule: "model", p: 0.79, name: "A", city: "X", area: "X area", message: "83% full now.", area_occ: 0.83, kind: "warning", happened: true },
+               { id: "2", rule: "model", p: 0.95, name: "B", city: "Y", area: "Y area", message: "90% full now.", area_occ: 0.9, kind: "already", happened: null }] }) };
   }
   if (url.startsWith("/api/emergency/status")) {
     return { ok: true, json: async () => ({ ready: false, loading: false, error: "no data cache in smoke test" }) };
