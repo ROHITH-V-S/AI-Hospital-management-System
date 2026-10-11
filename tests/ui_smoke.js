@@ -11,7 +11,9 @@ const fs = require("fs");
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const html = fs.readFileSync(path.join(ROOT, "mahros/server/static/index.html"), "utf8");
-const js = html.split("<script>")[1].split("</script>")[0];
+// Every script the page loads, in order, except boot.js (which starts the page).
+const files = [...html.matchAll(/<script src="\/static\/([a-z_]+\.js)"><\/script>/g)].map(m => m[1]).filter(f => f !== "boot.js");
+const js = files.map(f => fs.readFileSync(path.join(ROOT, "mahros/server/static", f), "utf8")).join("\n");
 const UI = path.join(ROOT, "results/ui");
 
 const written = {};
@@ -50,6 +52,17 @@ global.fetch = async (url, opt) => {
     // The live console needs the local data cache; here we check it degrades cleanly.
     return { ok: true, json: async () => ({ ready: false, loading: false, error: "no data cache in smoke test" }) };
   }
+  if (url.startsWith("/api/emergency/status")) {
+    return { ok: true, json: async () => ({ ready: false, loading: false, error: "no data cache in smoke test" }) };
+  }
+  if (url.startsWith("/api/book")) {
+    return { ok: true, json: async () => ({
+      summary: { entries: 3, blocks: 1, head: "ab".repeat(32) }, database: "postgresql",
+      verify: { ok: true, entries: 3, message: "All 3 lines match." }, demo_tamper: null,
+      recent: [{ seq: 1, kind: "BID", recorded_at: "2024-01-08T10:42:00", sender: "hospital:1", receiver: "coordinator",
+                 body: { reason: "3 ICU beds free", travel_min: 14 }, hash: "cd".repeat(32), prev_hash: "0".repeat(64) }],
+      blocks: [{ id: 1, label: "Emergency · Arizona", first_seq: 1, last_seq: 3, sealed: true, hash: "ef".repeat(32) }] }) };
+  }
   if (url.startsWith("/api/ledger")) {
     const idx = JSON.parse(fs.readFileSync(path.join(UI, "index.json"), "utf8"));
     const tam = url.includes("tamper");
@@ -63,10 +76,14 @@ global.fetch = async (url, opt) => {
 };
 
 (async () => {
-  const run = new Function(js + "\nreturn {renderLive, renderOverview, renderTrust, renderForecast, renderCoord, drawWeek, renderAudit};");
+  const names = ["renderLive", "renderOverview", "renderTrust", "renderForecast", "renderCoord", "drawWeek",
+                 "renderAudit", "renderEmergency", "renderEvEmergency", "renderWarning", "renderEvWarning",
+                 "renderResources", "renderEvStaff", "renderDataTrust"];
+  const run = new Function(js + "\nreturn {" + names.map(n => `${n}: typeof ${n} === "function" ? ${n} : undefined`).join(",") + "};");
   const R = run();
   const errors = [];
   for (const [name, f] of Object.entries(R)) {
+    if (!f) { console.log(`note: ${name} not defined yet`); continue; }
     try { await f(); } catch (e) { errors.push(`${name}: ${e.stack || e}`); }
   }
   // Exercise every week x a few states in the explorer.

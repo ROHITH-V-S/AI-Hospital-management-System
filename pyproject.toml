@@ -29,7 +29,7 @@ dev = ["pytest>=7.0", "httpx>=0.27", "fastapi>=0.110",
 include = ["mahros*"]
 
 [tool.setuptools.package-data]
-"mahros.server" = ["static/*.html"]
+"mahros.server" = ["static/*.html", "static/*.js"]
 "mahros.calibration" = ["data/*.json"]
 
 [tool.pytest.ini_options]

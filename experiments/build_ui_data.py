@@ -1,6 +1,7 @@
 """Precompute the small JSON files the dashboard reads.
 
-    python experiments/build_ui_data.py      (after the three rq*_ scripts)
+    python experiments/build_ui_data.py              (after the rq*/emergency/surge scripts)
+    python experiments/build_ui_data.py --copy-only  (only re-copy headline result files)
 
 The dashboard never needs the 1M-row national cache: everything it shows is
 written here to ``results/ui/`` and committed, so the deployed page and a
@@ -141,20 +142,38 @@ def runs_data(df: pd.DataFrame) -> dict:
     return index
 
 
+#: Headline results copied verbatim (minus bulky per-unit rows) so the page never
+#: recomputes them. v0.3 files are copied when present.
+COPY = {"rq1_trust_audit": (), "rq2_forecast": (), "rq3_coordination": ("weekly_full",),
+        "houston_case_study": (), "emergency_eval": ("units",), "surge_warning": ("weekly",),
+        "staffing_check": ("state_weeks",)}
+
+
+def copy_results() -> None:
+    for name, drop in COPY.items():
+        f = RESULTS / f"{name}.json"
+        if not f.exists():
+            print(f"  (skip {name}: not built yet)")
+            continue
+        src = json.loads(f.read_text())
+        for k in drop:
+            src.pop(k, None)
+        dump(f"{name}.json", src)
+    dump("manifest.json", json.loads(hhs.MANIFEST.read_text()))
+
+
 def main() -> int:
     t0 = time.perf_counter()
+    if "--copy-only" in sys.argv:          # fast: only re-copy the headline result files
+        copy_results()
+        print(f"copied ({time.perf_counter() - t0:.1f}s)")
+        return 0
     df = assessed("corrected")
     print("trust ..."); dump("trust.json", trust_data(df))
     print("forecast ..."); dump("forecast.json", forecast_data(df))
     print("runs ..."); idx = runs_data(df)
     dump("index.json", idx)
-    # Headline results, copied verbatim so the page never recomputes them.
-    for name in ("rq1_trust_audit", "rq2_forecast", "rq3_coordination", "houston_case_study"):
-        src = json.loads((RESULTS / f"{name}.json").read_text())
-        if name == "rq3_coordination":
-            src.pop("weekly_full", None)
-        dump(f"{name}.json", src)
-    dump("manifest.json", json.loads(hhs.MANIFEST.read_text()))
+    copy_results()
     sizes = {p.name: p.stat().st_size for p in UI.glob("*.json")}
     print(json.dumps(sizes, indent=1), f"total {sum(sizes.values()) / 1e6:.1f} MB",
           f"({time.perf_counter() - t0:.0f}s)")

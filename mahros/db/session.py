@@ -42,13 +42,15 @@ def get_engine(url: str | None = None) -> Engine:
         kw = {"future": True, "pool_pre_ping": True}
         if url.startswith("sqlite"):
             Path(DEFAULT_SQLITE.parent).mkdir(parents=True, exist_ok=True)
-            kw["connect_args"] = {"check_same_thread": False}
+            # Wait instead of failing when another thread is writing (SQLite only).
+            kw["connect_args"] = {"check_same_thread": False, "timeout": 30}
         eng = create_engine(url, **kw)
         if url.startswith("sqlite"):
             @event.listens_for(eng, "connect")
             def _fk_on(dbapi_conn, _):          # SQLite ignores foreign keys by default
                 cur = dbapi_conn.cursor()
                 cur.execute("PRAGMA foreign_keys=ON")
+                cur.execute("PRAGMA journal_mode=WAL")      # readers do not block the writer
                 cur.close()
         _engines[url] = eng
     return _engines[url]

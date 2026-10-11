@@ -352,3 +352,106 @@ ready time **and reason**; the test requires the change to be named.
 edit of the reason is named). pgAdmin's password file connects without a
 prompt (`psql -w` inside the pgAdmin container read 1,045,406 rows).
 The plain-language explanation on screen is built with the Phase 6 UI.
+
+## 2026-10-11 — Step 14 (Phase 3): emergency transfer module (the core)
+
+**Why.** Team flaws #1 and #2: weekly planning alone is weak (a government
+could phone every hospital weekly); the life-saving problem is the acute
+transfer found today by serial phone calls; and the multi-agent part was thin.
+
+**Real inputs vendored** (`experiments/fetch_emergency_network.py`,
+`mahros/calibration/data/us_{az,ma}_*.json`):
+- Hospitals: every Short Term / Critical Access hospital reporting in
+  2022-12-25..2024-04-21 — **71 Arizona, 58 Massachusetts** (the spec's 74/59
+  were all-time counts).
+- OSRM driving times, all pairs: AZ 71×71, MA 58×58, **0 unroutable** (AZ
+  median 142 min, MA 73 min between hospitals).
+- CMS POS **Q3 2022** (newest quarter on the NBER mirror), joined on CCN:
+  matched **68/71** AZ and **58/58** MA. Unmatched hospitals use only their
+  observed HHS ICU / paediatric ICU beds; no capability is guessed.
+
+**Citations checked** (abstracts fetched, not remembered):
+- 1.5% of US ED encounters end in transfer to another acute hospital
+  (Kindermann et al., Acad Emerg Med 2015; HCUP NEDS 2009) — anchor for the
+  swept request rate 0.5/1.0/1.5%.
+- Mean ICU stay of Medicare survivors 3.4 d (Moitra et al., Crit Care Med 2016, PMID 26571190).
+- The spec's "3% per hour" (PMID 27352032) is Churpek et al., J Hosp Med
+  2016 — **ward-to-ICU delay within a hospital**, not interhospital; cited
+  with that caveat. PMC4472710 is a Crit Care 2015 **meeting abstract**: 151
+  interhospital critical-care transfers in 49 UK hospitals, median delay 22 h,
+  driven by organisation not distance.
+- ~12 min per transfer phone call: one regional ED study (2003), 4.7 calls,
+  56.7 min — old, so call length is swept 5/10/15.
+- ACC/AHA 2013 STEMI: FMC-to-device ≤ 120 min when transferring.
+- **CDC NHSN guidance effective 2023-06-11 made "previous day's ED visits"
+  (element 19) and COVID ED visits (20) OPTIONAL** (read in the PDF). ED
+  reporting then fell to ~0 in Massachusetts and ~2/3 in Arizona. ED volume
+  only sets the request rate, so a missing week uses the hospital's own
+  median of its last 8 reports, labelled "carried forward" with the date.
+
+**Design** (`mahros/emergency/`):
+- `HospitalAgent`: private state (ICU census, nurses on shift from the
+  Title 22 1:2 ratio, short-staffed or not, ventilators, cath rooms,
+  paediatric ICU, its own reserve-bed policy). Answers call-for-bids, awards
+  and phone calls by itself with the SAME rule and a reason. Honest — no lying
+  hospitals, no argumentation, no oracle reads.
+- `steward_check`: bid vs the hospital's own public weekly report (ICU ≥ 100%
+  or report RED/MISSING) → confirm by phone (costs one call in the ranking).
+- Coordinator (MAHROS): broadcast to all capable hospitals within the clinical
+  window at once, 3-min bid window, rank by time to definitive care → capability
+  → free beds, one doctor-to-doctor acceptance call.
+- Phone baselines: nearest first; and **report-informed** (hospitals whose
+  report shows ICU room first). Stop at the FIRST yes (v0.1's discard bug
+  pinned by a test). Both arms end with the same acceptance call, so **phoning
+  wins when the nearest hospital has room** (pinned by a test).
+- `World`: discrete-event week; common random numbers across policies.
+
+**Fixes during build.**
+1. Calibration check found simulated ICUs 4–16% emptier than reported at
+   near-full hospitals (a full ICU turns patients away). Arrival rates now come
+   from the Erlang loss formula so the CAPPED census equals the report:
+   total 100.2%, median hospital 99.8% (calibration, not validation).
+2. Python's `hash()` of a string changes between runs → cath-lab draws used
+   it → replaced by `zlib.crc32` (results were not reproducible).
+3. Screenshot showed "short-staffed" in a week with 0% real shortage: nurses
+   were rounded down (105-bed ICU → 52 nurses → 104 usable). Rounded up; the
+   message now appears only for hospitals drawn short-staffed. Test added.
+4. Copying the world for the phone what-if failed (kernel held a module;
+   message bus held closures) → plain imports and bound methods.
+5. SQLite fallback: "database is locked" while the app read 1M rows → WAL +
+   30 s timeout (Postgres unaffected).
+6. 4 state-weeks produced no requests (ED not reported) → carry-forward above.
+7. The headline sentence on the evidence page was hard-coded "yes" → now
+   chosen from the confidence interval.
+
+**Results** (`experiments/emergency_eval.py`, 16 real weeks × 10 runs, 480 runs
++ 3,680 sensitivity runs, `results/emergency_eval.json`):
+
+| | MAHROS | Phone, nearest | Phone, report-informed |
+|---|---|---|---|
+| Mean time to confirmed bed | 13.2 min | 19.9 | 16.5 |
+| Slowest 10% | 13.0 | 37.1 | 29.0 |
+| Reached care inside window | 95.7% | 94.4% | 94.8% |
+| Bed found | 97.6% | 97.9% | 97.9% |
+| Phone calls per patient | 1.00 | 1.99 | 1.66 |
+
+MAHROS − phone nearest: −6.7 min (95% CI −7.2 to −6.2); slowest 10% −24.1
+(−25.3 to −22.9); inside window +1.3 pts. One-at-a-time sensitivity range:
+−2.0 (5-min calls) to −12.1 min (1.5% request rate). Honest reading: the gain
+is in the slow tail and staff phone time; the in-window share barely moves
+because the windows are long; MAHROS finds a bed slightly LESS often (phone
+callers keep calling while beds free up).
+
+**UI.** New first tab "Emergency": pick a hospital (map, zoom "around the
+patient", or list), the need and urgency, "Find a bed", then five steps (ask
+all at once → answers with reasons → Steward check → choice with reason →
+MAHROS vs phone at 5/10/15-min calls). Every case is written to
+`transfer_requests`, `bids`, `transfers` and sealed as a record-book page.
+Page split into `static/*.js`; `tests/ui_smoke.js` loads them all.
+Screenshot fixes: tiny overlapping Phoenix dots (zoom + list), legend text
+leaking into the panel, staffing sentence now gives answered/not-answered
+counts, red-but-bidding hospitals explained (weekly average vs now).
+
+**Tests.** `tests/test_emergency.py` (14), `tests/test_emergency_live.py` (3:
+every answer has a reason, bids logged, editing a logged bid is caught, the
+phone what-if never touches the live world).

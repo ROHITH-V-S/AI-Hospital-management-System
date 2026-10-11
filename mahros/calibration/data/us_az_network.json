@@ -1,0 +1,650 @@
+{
+ "source": {
+  "dataset": "HHS COVID-19 Reported Patient Impact and Hospital Capacity by Facility (anag-cw7u)",
+  "selection": "Short Term + Critical Access hospitals in Arizona with at least one report 2022-12-25..2024-04-21",
+  "provenance": "observed"
+ },
+ "state": "AZ",
+ "n": 71,
+ "hospitals": [
+  {
+   "hospital_pk": "030002",
+   "ccn": "030002",
+   "name": "BANNER - UNIVERSITY MEDICAL CENTER PHOENIX",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.463938,
+   "lon": -112.059699
+  },
+  {
+   "hospital_pk": "030006",
+   "ccn": "030006",
+   "name": "TUCSON MEDICAL CENTER",
+   "city": "TUCSON",
+   "subtype": "Short Term",
+   "lat": 32.252392,
+   "lon": -110.879008
+  },
+  {
+   "hospital_pk": "030007",
+   "ccn": "030007",
+   "name": "VERDE VALLEY MEDICAL CENTER",
+   "city": "COTTONWOOD",
+   "subtype": "Short Term",
+   "lat": 34.735172,
+   "lon": -112.029567
+  },
+  {
+   "hospital_pk": "030010",
+   "ccn": "030010",
+   "name": "ST. MARY'S HOSPITAL",
+   "city": "TUCSON",
+   "subtype": "Short Term",
+   "lat": 32.228202,
+   "lon": -111.000081
+  },
+  {
+   "hospital_pk": "030011",
+   "ccn": "030011",
+   "name": "ST JOSEPH'S HOSPITAL",
+   "city": "TUCSON",
+   "subtype": "Short Term",
+   "lat": 32.227213,
+   "lon": -110.855659
+  },
+  {
+   "hospital_pk": "030012",
+   "ccn": "030012",
+   "name": "YAVAPAI REGIONAL MEDICAL CENTER",
+   "city": "PRESCOTT",
+   "subtype": "Short Term",
+   "lat": 34.558994,
+   "lon": -112.4819
+  },
+  {
+   "hospital_pk": "030013",
+   "ccn": "030013",
+   "name": "YUMA REGIONAL MEDICAL CENTER",
+   "city": "YUMA",
+   "subtype": "Short Term",
+   "lat": 32.68317,
+   "lon": -114.633457
+  },
+  {
+   "hospital_pk": "030014",
+   "ccn": "030014",
+   "name": "HONORHEALTH JOHN C. LINCOLN MEDICAL CENTER",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.568947,
+   "lon": -112.071298
+  },
+  {
+   "hospital_pk": "030016",
+   "ccn": "030016",
+   "name": "BANNER CASA GRANDE MEDICAL CENTER",
+   "city": "CASA GRANDE",
+   "subtype": "Short Term",
+   "lat": 32.881309,
+   "lon": -111.709616
+  },
+  {
+   "hospital_pk": "030022",
+   "ccn": "030022",
+   "name": "VALLEYWISE HEALTH MEDICAL CENTER",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.457201,
+   "lon": -112.026264
+  },
+  {
+   "hospital_pk": "030023",
+   "ccn": "030023",
+   "name": "FLAGSTAFF MEDICAL CENTER",
+   "city": "FLAGSTAFF",
+   "subtype": "Short Term",
+   "lat": 35.20859,
+   "lon": -111.645099
+  },
+  {
+   "hospital_pk": "030024",
+   "ccn": "030024",
+   "name": "ST. JOSEPH'S HOSPITAL AND MEDICAL CENTER",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.480868,
+   "lon": -112.079515
+  },
+  {
+   "hospital_pk": "030030",
+   "ccn": "030030",
+   "name": "ABRAZO CENTRAL CAMPUS",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.525401,
+   "lon": -112.102461
+  },
+  {
+   "hospital_pk": "030036",
+   "ccn": "030036",
+   "name": "CHANDLER REGIONAL MEDICAL CENTER",
+   "city": "CHANDLER",
+   "subtype": "Short Term",
+   "lat": 33.297704,
+   "lon": -111.873652
+  },
+  {
+   "hospital_pk": "030037",
+   "ccn": "030037",
+   "name": "TEMPE ST LUKES HOSPITAL",
+   "city": "TEMPE",
+   "subtype": "Short Term",
+   "lat": 33.412226,
+   "lon": -111.940277
+  },
+  {
+   "hospital_pk": "030038",
+   "ccn": "030038",
+   "name": "HONORHEALTH SCOTTSDALE OSBORN MEDICAL CENTER",
+   "city": "SCOTTSDALE",
+   "subtype": "Short Term",
+   "lat": 33.488749,
+   "lon": -111.922527
+  },
+  {
+   "hospital_pk": "030043",
+   "ccn": "030043",
+   "name": "CANYON VISTA MEDICAL CENTER",
+   "city": "SIERRA VISTA",
+   "subtype": "Short Term",
+   "lat": 31.552592,
+   "lon": -110.230193
+  },
+  {
+   "hospital_pk": "030055",
+   "ccn": "030055",
+   "name": "KINGMAN REGIONAL MEDICAL CENTER",
+   "city": "KINGMAN",
+   "subtype": "Short Term",
+   "lat": 35.21994,
+   "lon": -114.035818
+  },
+  {
+   "hospital_pk": "030061",
+   "ccn": "030061",
+   "name": "BANNER BOSWELL MEDICAL CENTER",
+   "city": "SUN CITY",
+   "subtype": "Short Term",
+   "lat": 33.603885,
+   "lon": -112.283179
+  },
+  {
+   "hospital_pk": "030062",
+   "ccn": "030062",
+   "name": "SUMMIT HEALTHCARE REGIONAL MEDICAL CENTER",
+   "city": "SHOW LOW",
+   "subtype": "Short Term",
+   "lat": 34.202985,
+   "lon": -110.017671
+  },
+  {
+   "hospital_pk": "030064",
+   "ccn": "030064",
+   "name": "BANNER - UNIVERSITY MEDICAL CENTER TUCSON CAMPUS",
+   "city": "TUCSON",
+   "subtype": "Short Term",
+   "lat": 32.241834,
+   "lon": -110.947242
+  },
+  {
+   "hospital_pk": "030065",
+   "ccn": "030065",
+   "name": "BANNER DESERT MEDICAL CENTER",
+   "city": "MESA",
+   "subtype": "Short Term",
+   "lat": 33.389823,
+   "lon": -111.87609
+  },
+  {
+   "hospital_pk": "030069",
+   "ccn": "030069",
+   "name": "HAVASU REGIONAL MEDICAL CENTER",
+   "city": "LAKE HAVASU CITY",
+   "subtype": "Short Term",
+   "lat": 34.480221,
+   "lon": -114.339053
+  },
+  {
+   "hospital_pk": "030083",
+   "ccn": "030083",
+   "name": "ABRAZO SCOTTSDALE CAMPUS",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.639579,
+   "lon": -111.996918
+  },
+  {
+   "hospital_pk": "030085",
+   "ccn": "030085",
+   "name": "NORTHWEST MEDICAL CENTER",
+   "city": "TUCSON",
+   "subtype": "Short Term",
+   "lat": 32.320323,
+   "lon": -111.009951
+  },
+  {
+   "hospital_pk": "030087",
+   "ccn": "030087",
+   "name": "HONORHEALTH SCOTTSDALE SHEA MEDICAL CENTER",
+   "city": "SCOTTSDALE",
+   "subtype": "Short Term",
+   "lat": 33.580379,
+   "lon": -111.885479
+  },
+  {
+   "hospital_pk": "030088",
+   "ccn": "030088",
+   "name": "BANNER BAYWOOD MEDICAL CENTER",
+   "city": "MESA",
+   "subtype": "Short Term",
+   "lat": 33.411161,
+   "lon": -111.688688
+  },
+  {
+   "hospital_pk": "030089",
+   "ccn": "030089",
+   "name": "BANNER THUNDERBIRD MEDICAL CENTER",
+   "city": "GLENDALE",
+   "subtype": "Short Term",
+   "lat": 33.609298,
+   "lon": -112.179751
+  },
+  {
+   "hospital_pk": "030092",
+   "ccn": "030092",
+   "name": "HONORHEALTH DEER VALLEY MEDICAL CENTER",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.665619,
+   "lon": -112.116265
+  },
+  {
+   "hospital_pk": "030093",
+   "ccn": "030093",
+   "name": "BANNER DEL E. WEBB MEDICAL CENTER",
+   "city": "SUN CITY WEST",
+   "subtype": "Short Term",
+   "lat": 33.660653,
+   "lon": -112.373618
+  },
+  {
+   "hospital_pk": "030094",
+   "ccn": "030094",
+   "name": "ABRAZO ARROWHEAD CAMPUS",
+   "city": "GLENDALE",
+   "subtype": "Short Term",
+   "lat": 33.655736,
+   "lon": -112.201414
+  },
+  {
+   "hospital_pk": "030101",
+   "ccn": "030101",
+   "name": "WESTERN ARIZONA REGIONAL MEDICAL CENTER",
+   "city": "BULLHEAD CITY",
+   "subtype": "Short Term",
+   "lat": 35.110927,
+   "lon": -114.555245
+  },
+  {
+   "hospital_pk": "030103",
+   "ccn": "030103",
+   "name": "MAYO CLINIC HOSPITAL",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.659107,
+   "lon": -111.956478
+  },
+  {
+   "hospital_pk": "030105",
+   "ccn": "030105",
+   "name": "BANNER HEART HOSPITAL",
+   "city": "MESA",
+   "subtype": "Short Term",
+   "lat": 33.411197,
+   "lon": -111.685363
+  },
+  {
+   "hospital_pk": "030107",
+   "ccn": "030107",
+   "name": "ARIZONA SPINE AND JOINT HOSPITAL",
+   "city": "MESA",
+   "subtype": "Short Term",
+   "lat": 33.379745,
+   "lon": -111.734642
+  },
+  {
+   "hospital_pk": "030108",
+   "ccn": "030108",
+   "name": "THE CORE INSTITUTE SPECIALTY HOSPITAL",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.532122,
+   "lon": -112.099323
+  },
+  {
+   "hospital_pk": "030110",
+   "ccn": "030110",
+   "name": "ABRAZO WEST CAMPUS",
+   "city": "GOODYEAR",
+   "subtype": "Short Term",
+   "lat": 33.46198,
+   "lon": -112.353546
+  },
+  {
+   "hospital_pk": "030111",
+   "ccn": "030111",
+   "name": "BANNER-UNIVERSITY MEDICAL CENTER SOUTH CAMPUS",
+   "city": "TUCSON",
+   "subtype": "Short Term",
+   "lat": 32.175797,
+   "lon": -110.930692
+  },
+  {
+   "hospital_pk": "030112",
+   "ccn": "030112",
+   "name": "ARIZONA SPECIALTY HOSPITAL",
+   "city": "CHANDLER",
+   "subtype": "Short Term",
+   "lat": 33.333923,
+   "lon": -111.891404
+  },
+  {
+   "hospital_pk": "030114",
+   "ccn": "030114",
+   "name": "ORO VALLEY HOSPITAL",
+   "city": "ORO VALLEY",
+   "subtype": "Short Term",
+   "lat": 32.428471,
+   "lon": -110.949348
+  },
+  {
+   "hospital_pk": "030115",
+   "ccn": "030115",
+   "name": "BANNER ESTRELLA MEDICAL CENTER",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.478918,
+   "lon": -112.257899
+  },
+  {
+   "hospital_pk": "030117",
+   "ccn": "030117",
+   "name": "VALLEY VIEW MEDICAL CENTER",
+   "city": "FORT MOHAVE",
+   "subtype": "Short Term",
+   "lat": 35.00266,
+   "lon": -114.595891
+  },
+  {
+   "hospital_pk": "030119",
+   "ccn": "030119",
+   "name": "MERCY GILBERT MEDICAL CENTER",
+   "city": "GILBERT",
+   "subtype": "Short Term",
+   "lat": 33.286573,
+   "lon": -111.752754
+  },
+  {
+   "hospital_pk": "030121",
+   "ccn": "030121",
+   "name": "MOUNTAIN VISTA MEDICAL CENTER, LP",
+   "city": "MESA",
+   "subtype": "Short Term",
+   "lat": 33.391494,
+   "lon": -111.611863
+  },
+  {
+   "hospital_pk": "030122",
+   "ccn": "030122",
+   "name": "BANNER GATEWAY MEDICAL CENTER",
+   "city": "GILBERT",
+   "subtype": "Short Term",
+   "lat": 33.384524,
+   "lon": -111.722288
+  },
+  {
+   "hospital_pk": "030123",
+   "ccn": "030123",
+   "name": "HONORHEALTH SCOTTSDALE THOMPSON PEAK MED CTR",
+   "city": "SCOTTSDALE",
+   "subtype": "Short Term",
+   "lat": 33.670793,
+   "lon": -111.921669
+  },
+  {
+   "hospital_pk": "030130",
+   "ccn": "030130",
+   "name": "BANNER IRONWOOD MEDICAL CENTER",
+   "city": "QUEEN CREEK",
+   "subtype": "Short Term",
+   "lat": 33.215307,
+   "lon": -111.565501
+  },
+  {
+   "hospital_pk": "030131",
+   "ccn": "030131",
+   "name": "O.A.S.I.S. HOSPITAL",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.456715,
+   "lon": -111.996049
+  },
+  {
+   "hospital_pk": "030134",
+   "ccn": "030134",
+   "name": "BANNER GOLDFIELD MEDICAL CENTER",
+   "city": "APACHE JUNCTION",
+   "subtype": "Short Term",
+   "lat": 33.394228,
+   "lon": -111.56679
+  },
+  {
+   "hospital_pk": "030136",
+   "ccn": "030136",
+   "name": "DIGNITY HEALTH - ARIZONA GENERAL HOSPITAL",
+   "city": "LAVEEN",
+   "subtype": "Short Term",
+   "lat": 33.380609,
+   "lon": -112.167452
+  },
+  {
+   "hospital_pk": "030138",
+   "ccn": "030138",
+   "name": "WESTERN REGIONAL MEDICAL CENTER",
+   "city": "GOODYEAR",
+   "subtype": "Short Term",
+   "lat": 33.453868,
+   "lon": -112.36457
+  },
+  {
+   "hospital_pk": "030139",
+   "ccn": "030139",
+   "name": "DIGNITY HEALTH ARIZONA GENERAL HOSPITAL",
+   "city": "MESA",
+   "subtype": "Short Term",
+   "lat": 33.350967,
+   "lon": -111.636786
+  },
+  {
+   "hospital_pk": "030146",
+   "ccn": "030146",
+   "name": "HONORHEALTH SONORAN CROSSING MEDICAL CENTER",
+   "city": "PHOENIX",
+   "subtype": "Short Term",
+   "lat": 33.785567,
+   "lon": -112.130195
+  },
+  {
+   "hospital_pk": "030147",
+   "ccn": "030147",
+   "name": "BANNER OCOTILLO MEDICAL CENTER",
+   "city": "CHANDLER",
+   "subtype": "Short Term",
+   "lat": 33.285216,
+   "lon": -111.857075
+  },
+  {
+   "hospital_pk": "030148",
+   "ccn": "030148",
+   "name": "NORTHWEST MEDICAL CENTER SAHUARITA",
+   "city": "SAHUARITA",
+   "subtype": "Short Term",
+   "lat": 31.955865,
+   "lon": -110.985219
+  },
+  {
+   "hospital_pk": "030152",
+   "ccn": "030152",
+   "name": "EXCEPTIONAL COMMUNITY HOSPITAL - MARICOPA",
+   "city": "MARICOPA",
+   "subtype": "Short Term",
+   "lat": 33.052826,
+   "lon": -112.047873
+  },
+  {
+   "hospital_pk": "030153",
+   "ccn": "030153",
+   "name": "EAST VALLEY ER & HOSPITAL",
+   "city": "GILBERT",
+   "subtype": "Short Term",
+   "lat": 33.313856,
+   "lon": -111.687716
+  },
+  {
+   "hospital_pk": "030154",
+   "ccn": "030154",
+   "name": "EXCEPTIONAL COMMUNITY HOSPITAL YUMA",
+   "city": "YUMA",
+   "subtype": "Short Term",
+   "lat": 32.680022,
+   "lon": -114.52174
+  },
+  {
+   "hospital_pk": "031300",
+   "ccn": "031300",
+   "name": "WICKENBURG COMMUNITY HOSPITAL",
+   "city": "WICKENBURG",
+   "subtype": "Critical Access Hospitals",
+   "lat": 33.978286,
+   "lon": -112.740369
+  },
+  {
+   "hospital_pk": "031301",
+   "ccn": "031301",
+   "name": "BENSON HOSPITAL",
+   "city": "BENSON",
+   "subtype": "Critical Access Hospitals",
+   "lat": 31.965004,
+   "lon": -110.30797
+  },
+  {
+   "hospital_pk": "031302",
+   "ccn": "031302",
+   "name": "NORTHERN COCHISE COMMUNITY HOSPITAL, INC.",
+   "city": "WILLCOX",
+   "subtype": "Critical Access Hospitals",
+   "lat": 32.265,
+   "lon": -109.83821
+  },
+  {
+   "hospital_pk": "031304",
+   "ccn": "031304",
+   "name": "PAGE HOSPITAL",
+   "city": "PAGE",
+   "subtype": "Critical Access Hospitals",
+   "lat": 36.917219,
+   "lon": -111.463245
+  },
+  {
+   "hospital_pk": "031311",
+   "ccn": "031311",
+   "name": "LITTLE COLORADO MEDICAL CENTER",
+   "city": "WINSLOW",
+   "subtype": "Critical Access Hospitals",
+   "lat": 35.035533,
+   "lon": -110.691815
+  },
+  {
+   "hospital_pk": "031312",
+   "ccn": "031312",
+   "name": "COPPER QUEEN COMMUNITY HOSPITAL",
+   "city": "BISBEE",
+   "subtype": "Critical Access Hospitals",
+   "lat": 31.417628,
+   "lon": -109.883107
+  },
+  {
+   "hospital_pk": "031313",
+   "ccn": "031313",
+   "name": "HOLY CROSS HOSPITAL",
+   "city": "NOGALES",
+   "subtype": "Critical Access Hospitals",
+   "lat": 31.340527,
+   "lon": -110.960857
+  },
+  {
+   "hospital_pk": "031314",
+   "ccn": "031314",
+   "name": "COBRE VALLEY REGIONAL MEDICAL CENTER",
+   "city": "GLOBE",
+   "subtype": "Critical Access Hospitals",
+   "lat": 33.406187,
+   "lon": -110.826429
+  },
+  {
+   "hospital_pk": "031315",
+   "ccn": "031315",
+   "name": "WHITE MOUNTAIN REGIONAL MEDICAL CENTER",
+   "city": "SPRINGERVILLE",
+   "subtype": "Critical Access Hospitals",
+   "lat": 34.131386,
+   "lon": -109.28542
+  },
+  {
+   "hospital_pk": "031317",
+   "ccn": "031317",
+   "name": "LA PAZ REGIONAL HOSPITAL",
+   "city": "PARKER",
+   "subtype": "Critical Access Hospitals",
+   "lat": 34.138,
+   "lon": -114.2831
+  },
+  {
+   "hospital_pk": "031318",
+   "ccn": "031318",
+   "name": "BANNER PAYSON MEDICAL CENTER",
+   "city": "PAYSON",
+   "subtype": "Critical Access Hospitals",
+   "lat": 34.230393,
+   "lon": -111.3211
+  },
+  {
+   "hospital_pk": "031319",
+   "ccn": "031319",
+   "name": "MT. GRAHAM REGIONAL MEDICAL CENTER",
+   "city": "SAFFORD",
+   "subtype": "Critical Access Hospitals",
+   "lat": 32.822633,
+   "lon": -109.735127
+  },
+  {
+   "hospital_pk": "031320",
+   "ccn": "031320",
+   "name": "SAN CARLOS APACHE HEALTHCARE CORPORATION",
+   "city": "PERIDOT",
+   "subtype": "Critical Access Hospitals",
+   "lat": 33.294685,
+   "lon": -110.420059
+  }
+ ]
+}

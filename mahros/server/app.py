@@ -56,6 +56,12 @@ try:
 except TypeError:                                  # stub without database support
     LIVE = LiveEngine()
 
+try:
+    from ..emergency.live import EmergencyLive
+    EMERGENCY = EmergencyLive(DB, BOOK)
+except ImportError as _exc:                        # pragma: no cover
+    EMERGENCY = None
+
 
 def _ensure_tables() -> str | None:
     """Create/upgrade tables if needed (the Docker loader normally did this already)."""
@@ -77,6 +83,8 @@ async def _lifespan(_app):
     global DB_ERROR
     DB_ERROR = _ensure_tables()
     LIVE.start_loading()          # ~15 s in a background thread; the page shows progress
+    if EMERGENCY is not None:
+        EMERGENCY.start_loading()
     yield
 
 
@@ -116,6 +124,16 @@ def _published_head() -> str | None:
 @app.get("/")
 def index():
     return FileResponse(STATIC / "index.html")
+
+
+SAFE_STATIC = re.compile(r"^[a-z_]+\.js$")
+
+
+@app.get("/static/{name}")
+def static_file(name: str):
+    if not SAFE_STATIC.match(name) or not (STATIC / name).exists():
+        raise HTTPException(404, "not found")
+    return FileResponse(STATIC / name, media_type="text/javascript")
 
 
 @app.get("/healthz")
@@ -278,3 +296,53 @@ def live_tamper():
         return JSONResponse(LIVE.tamper())
     except ValueError as exc:
         raise HTTPException(400, str(exc))
+
+
+# --------------------------------------------------------------------------- #
+# Emergency transfer (simulation grounded in real data)
+# --------------------------------------------------------------------------- #
+
+def _em(state: str | None = None):
+    if EMERGENCY is None:
+        raise HTTPException(503, "emergency module not available")
+    if not EMERGENCY.ready:
+        raise HTTPException(503, EMERGENCY.error or "emergency module is still loading")
+    if state is not None and state not in EMERGENCY.sessions:
+        raise HTTPException(400, f"unknown state {state}")
+    return EMERGENCY
+
+
+@app.get("/api/emergency/status")
+def emergency_status(state: str = "AZ"):
+    if EMERGENCY is None or not EMERGENCY.ready:
+        return JSONResponse(EMERGENCY.status() if EMERGENCY else {"ready": False, "error": "not installed"})
+    return JSONResponse(_em(state).status(state))
+
+
+@app.get("/api/emergency/hospitals")
+def emergency_hospitals(state: str = "AZ"):
+    return JSONResponse(_em(state).hospitals(state))
+
+
+@app.post("/api/emergency/reset")
+def emergency_reset(state: str = "AZ", week: str | None = None):
+    em = _em(state)
+    week = week or em.sessions[state]["week"]
+    if week not in {w["week"] for w in em.weeks[state]}:
+        raise HTTPException(400, f"no trusted reports for week {week}")
+    with em.lock:
+        return JSONResponse(em.reset(state, week))
+
+
+@app.post("/api/emergency/advance")
+def emergency_advance(state: str = "AZ", minutes: float = 60):
+    return JSONResponse(_em(state).advance(state, minutes))
+
+
+@app.post("/api/emergency/find")
+def emergency_find(state: str, origin: str, need: str, acuity: str = "critical"):
+    em = _em(state)
+    try:
+        return JSONResponse(em.find_bed(state, origin, need, acuity))
+    except (ValueError, StopIteration) as exc:
+        raise HTTPException(400, str(exc) or "unknown hospital")

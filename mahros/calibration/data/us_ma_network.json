@@ -1,0 +1,533 @@
+{
+ "source": {
+  "dataset": "HHS COVID-19 Reported Patient Impact and Hospital Capacity by Facility (anag-cw7u)",
+  "selection": "Short Term + Critical Access hospitals in Massachusetts with at least one report 2022-12-25..2024-04-21",
+  "provenance": "observed"
+ },
+ "state": "MA",
+ "n": 58,
+ "hospitals": [
+  {
+   "hospital_pk": "220001",
+   "ccn": "220001",
+   "name": "HEALTH ALLIANCE - CLINTON HOSPITAL",
+   "city": "LEOMINSTER",
+   "subtype": "Short Term",
+   "lat": 42.540504,
+   "lon": -71.76255
+  },
+  {
+   "hospital_pk": "220002",
+   "ccn": "220002",
+   "name": "MOUNT AUBURN HOSPITAL",
+   "city": "CAMBRIDGE",
+   "subtype": "Short Term",
+   "lat": 42.373903,
+   "lon": -71.134238
+  },
+  {
+   "hospital_pk": "220008",
+   "ccn": "220008",
+   "name": "STURDY MEMORIAL HOSPITAL",
+   "city": "ATTLEBORO",
+   "subtype": "Short Term",
+   "lat": 41.942084,
+   "lon": -71.274944
+  },
+  {
+   "hospital_pk": "220010",
+   "ccn": "220010",
+   "name": "LAWRENCE GENERAL HOSPITAL",
+   "city": "LAWRENCE",
+   "subtype": "Short Term",
+   "lat": 42.709642,
+   "lon": -71.149262
+  },
+  {
+   "hospital_pk": "220011",
+   "ccn": "220011",
+   "name": "CAMBRIDGE HEALTH ALLIANCE",
+   "city": "CAMBRIDGE",
+   "subtype": "Short Term",
+   "lat": 42.374745,
+   "lon": -71.104326
+  },
+  {
+   "hospital_pk": "220012",
+   "ccn": "220012",
+   "name": "CAPE COD HOSPITAL",
+   "city": "HYANNIS",
+   "subtype": "Short Term",
+   "lat": 41.653361,
+   "lon": -70.273199
+  },
+  {
+   "hospital_pk": "220015",
+   "ccn": "220015",
+   "name": "COOLEY DICKINSON HOSPITAL INC,THE",
+   "city": "NORTHAMPTON",
+   "subtype": "Short Term",
+   "lat": 42.330438,
+   "lon": -72.65373
+  },
+  {
+   "hospital_pk": "220016",
+   "ccn": "220016",
+   "name": "BAYSTATE FRANKLIN MEDICAL CENTER",
+   "city": "GREENFIELD",
+   "subtype": "Short Term",
+   "lat": 42.5959,
+   "lon": -72.592288
+  },
+  {
+   "hospital_pk": "220017",
+   "ccn": "220017",
+   "name": "CARNEY HOSPITAL",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.278045,
+   "lon": -71.066047
+  },
+  {
+   "hospital_pk": "220019",
+   "ccn": "220019",
+   "name": "UMASS MEMORIAL HEALH - HARRINGTON HOSPITAL",
+   "city": "SOUTHBRIDGE",
+   "subtype": "Short Term",
+   "lat": 42.078547,
+   "lon": -72.042026
+  },
+  {
+   "hospital_pk": "220020",
+   "ccn": "220020",
+   "name": "SAINT ANNE'S HOSPITAL",
+   "city": "FALL RIVER",
+   "subtype": "Short Term",
+   "lat": 41.692527,
+   "lon": -71.163709
+  },
+  {
+   "hospital_pk": "220024",
+   "ccn": "220024",
+   "name": "HOLYOKE MEDICAL CENTER",
+   "city": "HOLYOKE",
+   "subtype": "Short Term",
+   "lat": 42.2004,
+   "lon": -72.627625
+  },
+  {
+   "hospital_pk": "220029",
+   "ccn": "220029",
+   "name": "ANNA JAQUES HOSPITAL",
+   "city": "NEWBURYPORT",
+   "subtype": "Short Term",
+   "lat": 42.814386,
+   "lon": -70.89108
+  },
+  {
+   "hospital_pk": "220030",
+   "ccn": "220030",
+   "name": "BAYSTATE WING HOSPITAL AND MEDICAL CENTERS",
+   "city": "PALMER",
+   "subtype": "Short Term",
+   "lat": 42.16892,
+   "lon": -72.341801
+  },
+  {
+   "hospital_pk": "220031",
+   "ccn": "220031",
+   "name": "BOSTON MEDICAL CENTER CORPORATION-",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.334781,
+   "lon": -71.074377
+  },
+  {
+   "hospital_pk": "220033",
+   "ccn": "220033",
+   "name": "BEVERLY HOSPITAL CORPORATION",
+   "city": "BEVERLY",
+   "subtype": "Short Term",
+   "lat": 42.563918,
+   "lon": -70.875463
+  },
+  {
+   "hospital_pk": "220035",
+   "ccn": "220035",
+   "name": "NORTH SHORE MEDICAL CENTER -",
+   "city": "SALEM",
+   "subtype": "Short Term",
+   "lat": 42.510315,
+   "lon": -70.906271
+  },
+  {
+   "hospital_pk": "220036",
+   "ccn": "220036",
+   "name": "ST ELIZABETH'S MEDICAL CENTER",
+   "city": "BRIGHTON",
+   "subtype": "Short Term",
+   "lat": 42.349591,
+   "lon": -71.14798
+  },
+  {
+   "hospital_pk": "220046",
+   "ccn": "220046",
+   "name": "BERKSHIRE MEDICAL CENTER INC - 1",
+   "city": "PITTSFIELD",
+   "subtype": "Short Term",
+   "lat": 42.459419,
+   "lon": -73.249431
+  },
+  {
+   "hospital_pk": "220049",
+   "ccn": "220049",
+   "name": "MARLBOROUGH HOSPITAL",
+   "city": "MARLBOROUGH",
+   "subtype": "Short Term",
+   "lat": 42.355313,
+   "lon": -71.554734
+  },
+  {
+   "hospital_pk": "220052",
+   "ccn": "220052",
+   "name": "SIGNATURE HEALTHCARE BROCKTON HOSPITAL",
+   "city": "BROCKTON",
+   "subtype": "Short Term",
+   "lat": 42.08791,
+   "lon": -70.991303
+  },
+  {
+   "hospital_pk": "220060",
+   "ccn": "220060",
+   "name": "BETH ISRAEL DEACONESS HOSPITAL - PLYMOUTH",
+   "city": "PLYMOUTH",
+   "subtype": "Short Term",
+   "lat": 41.943001,
+   "lon": -70.645281
+  },
+  {
+   "hospital_pk": "220062",
+   "ccn": "220062",
+   "name": "ADCARE HOSPITAL OF WORCESTER INC",
+   "city": "WORCESTER",
+   "subtype": "Short Term",
+   "lat": 42.27639,
+   "lon": -71.795008
+  },
+  {
+   "hospital_pk": "220063",
+   "ccn": "220063",
+   "name": "LOWELL GENERAL HOSPITAL",
+   "city": "LOWELL",
+   "subtype": "Short Term",
+   "lat": 42.647162,
+   "lon": -71.341413
+  },
+  {
+   "hospital_pk": "220065",
+   "ccn": "220065",
+   "name": "BAYSTATE NOBLE HOSPITAL",
+   "city": "WESTFIELD",
+   "subtype": "Short Term",
+   "lat": 42.118034,
+   "lon": -72.75976
+  },
+  {
+   "hospital_pk": "220066",
+   "ccn": "220066",
+   "name": "MERCY MEDICAL CTR",
+   "city": "SPRINGFIELD",
+   "subtype": "Short Term",
+   "lat": 42.115545,
+   "lon": -72.593225
+  },
+  {
+   "hospital_pk": "220070",
+   "ccn": "220070",
+   "name": "MELROSEWAKEFIELD HEALTHCARE",
+   "city": "MELROSE",
+   "subtype": "Short Term",
+   "lat": 42.46023,
+   "lon": -71.061109
+  },
+  {
+   "hospital_pk": "220071",
+   "ccn": "220071",
+   "name": "MASSACHUSETTS GENERAL HOSPITAL",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.363215,
+   "lon": -71.068773
+  },
+  {
+   "hospital_pk": "220073",
+   "ccn": "220073",
+   "name": "MORTON HOSPITAL",
+   "city": "TAUNTON",
+   "subtype": "Short Term",
+   "lat": 41.906166,
+   "lon": -71.094376
+  },
+  {
+   "hospital_pk": "220074",
+   "ccn": "220074",
+   "name": "SOUTHCOAST HOSPITAL GROUP, INC",
+   "city": "FALL RIVER",
+   "subtype": "Short Term",
+   "lat": 41.708879,
+   "lon": -71.145281
+  },
+  {
+   "hospital_pk": "220075",
+   "ccn": "220075",
+   "name": "MASSACHUSETTS EYE AND EAR INFIRMARY -",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.362783,
+   "lon": -71.070303
+  },
+  {
+   "hospital_pk": "220077",
+   "ccn": "220077",
+   "name": "BAYSTATE MEDICAL CENTER",
+   "city": "SPRINGFIELD",
+   "subtype": "Short Term",
+   "lat": 42.122598,
+   "lon": -72.602856
+  },
+  {
+   "hospital_pk": "220080",
+   "ccn": "220080",
+   "name": "HOLY FAMILY HOSPITAL",
+   "city": "METHUEN",
+   "subtype": "Short Term",
+   "lat": 42.727782,
+   "lon": -71.168406
+  },
+  {
+   "hospital_pk": "220083",
+   "ccn": "220083",
+   "name": "BETH ISRAEL DEACONESS HOSPITAL - NEEDHAM",
+   "city": "NEEDHAM",
+   "subtype": "Short Term",
+   "lat": 42.277184,
+   "lon": -71.236653
+  },
+  {
+   "hospital_pk": "220084",
+   "ccn": "220084",
+   "name": "EMERSON HOSPITAL -",
+   "city": "W CONCORD",
+   "subtype": "Short Term",
+   "lat": 42.451608,
+   "lon": -71.375984
+  },
+  {
+   "hospital_pk": "220086",
+   "ccn": "220086",
+   "name": "BETH ISRAEL DEACONESS MEDICAL CENTER",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.340938,
+   "lon": -71.105021
+  },
+  {
+   "hospital_pk": "220088",
+   "ccn": "220088",
+   "name": "NEW ENGLAND BAPTIST HOSPITAL",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.329757,
+   "lon": -71.106731
+  },
+  {
+   "hospital_pk": "220090",
+   "ccn": "220090",
+   "name": "MILFORD REGIONAL MEDICAL CENTER",
+   "city": "MILFORD",
+   "subtype": "Short Term",
+   "lat": 42.133196,
+   "lon": -71.528696
+  },
+  {
+   "hospital_pk": "220095",
+   "ccn": "220095",
+   "name": "HEYWOOD HOSPITAL -",
+   "city": "GARDNER",
+   "subtype": "Short Term",
+   "lat": 42.586374,
+   "lon": -71.987087
+  },
+  {
+   "hospital_pk": "220098",
+   "ccn": "220098",
+   "name": "NASHOBA VALLEY MEDICAL CENTER",
+   "city": "AYER",
+   "subtype": "Short Term",
+   "lat": 42.576754,
+   "lon": -71.574651
+  },
+  {
+   "hospital_pk": "220100",
+   "ccn": "220100",
+   "name": "SOUTH SHORE HOSPITAL",
+   "city": "SOUTH WEYMOUTH",
+   "subtype": "Short Term",
+   "lat": 42.175733,
+   "lon": -70.954207
+  },
+  {
+   "hospital_pk": "220101",
+   "ccn": "220101",
+   "name": "NEWTON-WELLESLEY HOSPITAL",
+   "city": "NEWTON",
+   "subtype": "Short Term",
+   "lat": 42.331473,
+   "lon": -71.24552
+  },
+  {
+   "hospital_pk": "220105",
+   "ccn": "220105",
+   "name": "WINCHESTER HOSPITAL",
+   "city": "WINCHESTER",
+   "subtype": "Short Term",
+   "lat": 42.465983,
+   "lon": -71.122786
+  },
+  {
+   "hospital_pk": "220108",
+   "ccn": "220108",
+   "name": "BETH ISRAEL DEACONESS HOSPITAL-MILTON INC",
+   "city": "MILTON",
+   "subtype": "Short Term",
+   "lat": 42.251381,
+   "lon": -71.07774
+  },
+  {
+   "hospital_pk": "220110",
+   "ccn": "220110",
+   "name": "BRIGHAM AND WOMEN'S HOSPITAL",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.335944,
+   "lon": -71.106749
+  },
+  {
+   "hospital_pk": "220111",
+   "ccn": "220111",
+   "name": "GOOD SAMARITAN MEDICAL CENTER",
+   "city": "BROCKTON",
+   "subtype": "Short Term",
+   "lat": 42.097736,
+   "lon": -71.061723
+  },
+  {
+   "hospital_pk": "220116",
+   "ccn": "220116",
+   "name": "TUFTS MEDICAL CENTER",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.34966,
+   "lon": -71.063516
+  },
+  {
+   "hospital_pk": "220119",
+   "ccn": "220119",
+   "name": "BRIGHAM AND WOMEN'S FAULKNER HOSPITAL",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.301453,
+   "lon": -71.128175
+  },
+  {
+   "hospital_pk": "220135",
+   "ccn": "220135",
+   "name": "FALMOUTH HOSPITAL",
+   "city": "FALMOUTH",
+   "subtype": "Short Term",
+   "lat": 41.564211,
+   "lon": -70.622364
+  },
+  {
+   "hospital_pk": "220162",
+   "ccn": "220162",
+   "name": "DANA-FARBER CANCER INSTITUTE",
+   "city": "BOSTON",
+   "subtype": "Short Term",
+   "lat": 42.337611,
+   "lon": -71.10828
+  },
+  {
+   "hospital_pk": "220163",
+   "ccn": "220163",
+   "name": "UMASS MEMORIAL MEDICAL CENTER INC",
+   "city": "WORCESTER",
+   "subtype": "Short Term",
+   "lat": 42.277574,
+   "lon": -71.761672
+  },
+  {
+   "hospital_pk": "220171",
+   "ccn": "220171",
+   "name": "LAHEY HOSPITAL & MEDICAL CENTER, BURLINGTON",
+   "city": "BURLINGTON",
+   "subtype": "Short Term",
+   "lat": 42.486322,
+   "lon": -71.206278
+  },
+  {
+   "hospital_pk": "220175",
+   "ccn": "220175",
+   "name": "METROWEST MEDICAL CENTER",
+   "city": "FRAMINGHAM",
+   "subtype": "Short Term",
+   "lat": 42.285432,
+   "lon": -71.418599
+  },
+  {
+   "hospital_pk": "220176",
+   "ccn": "220176",
+   "name": "ST VINCENT HOSPITAL",
+   "city": "WORCESTER",
+   "subtype": "Short Term",
+   "lat": 42.264658,
+   "lon": -71.797001
+  },
+  {
+   "hospital_pk": "220177",
+   "ccn": "220177",
+   "name": "NANTUCKET COTTAGE HOSPITAL",
+   "city": "NANTUCKET",
+   "subtype": "Short Term",
+   "lat": 41.275178,
+   "lon": -70.101454
+  },
+  {
+   "hospital_pk": "221300",
+   "ccn": "221300",
+   "name": "MARTHA'S VINEYARD HOSPITAL INC",
+   "city": "OAK BLUFFS",
+   "subtype": "Critical Access Hospitals",
+   "lat": 41.460611,
+   "lon": -70.579799
+  },
+  {
+   "hospital_pk": "221302",
+   "ccn": "221302",
+   "name": "FAIRVIEW HOSPITAL",
+   "city": "GREAT BARRINGTON",
+   "subtype": "Critical Access Hospitals",
+   "lat": 42.191099,
+   "lon": -73.371918
+  },
+  {
+   "hospital_pk": "221303",
+   "ccn": "221303",
+   "name": "ATHOL MEMORIAL HOSPITAL",
+   "city": "ATHOL",
+   "subtype": "Critical Access Hospitals",
+   "lat": 42.585424,
+   "lon": -72.208873
+  }
+ ]
+}
