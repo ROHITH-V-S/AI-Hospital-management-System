@@ -320,3 +320,35 @@ NBER POS mirror are reachable.
 - Verify on Postgres: `MAHROS_TEST_PG_URL=postgresql+psycopg://mahros:mahros-local@localhost:5432/postgres`
   and `MAHROS_TEST_DATABASE_URL=postgresql+psycopg://mahros:mahros-local@localhost:5432/mahros`
   then `python -m pytest`.
+
+## 2026-10-11 — Step 13 (Phase 2): audit ledger in the database
+
+**Why.** Team flaw #4: "what does secretly change a past report mean?" — the
+old demo edited an in-memory copy, so it proved nothing a reviewer could touch.
+
+**What.** `mahros/ledger/store.py` (`DbLedger`), tables `ledger_entries` and
+`ledger_blocks`.
+- Each line: `hash = SHA-256(seq, block, time, kind, sender, receiver, referenced row, body + previous hash)`.
+  Sequence numbers have no gaps; a page (block) per emergency case or
+  state-week stores a Merkle root and the previous page's hash. Postgres
+  advisory lock: one writer at a time.
+- **Records cross-check:** an entry that announces a bid / transfer / plan
+  line copies the row's key fields into `body.record`; `verify()` re-reads the
+  row. So editing a **bid in pgAdmin** is caught, not only editing the log.
+- `verify()` returns the FIRST problem with a plain sentence: edited line,
+  deleted line, inserted line, edited/deleted record, broken page seal.
+- API: `GET /api/book`, `POST /api/book/verify`, `POST /api/book/tamper`
+  (one-click: changes the newest logged bid's travel time in the database row,
+  exactly what a person could do in pgAdmin), `POST /api/book/undo`,
+  `GET /api/book/block/{id}`.
+
+**Fix during build.** A test edited a bid's *reason* by hand and verification
+still passed: the reason was not a vouched field, so a decline reason could
+be rewritten unnoticed. Bids now vouch for hospital, answer, travel time,
+ready time **and reason**; the test requires the change to be named.
+
+**Verified.** `tests/test_db_ledger.py` (6 checks, SQLite + Postgres) and
+`tests/test_server.py` (one-click tamper names the bid, undo restores, hand
+edit of the reason is named). pgAdmin's password file connects without a
+prompt (`psql -w` inside the pgAdmin container read 1,045,406 rows).
+The plain-language explanation on screen is built with the Phase 6 UI.

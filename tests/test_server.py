@@ -55,3 +55,52 @@ def test_tamper_is_detected_at_the_right_block_and_reset_restores(client):
     assert d["tampered"]["before"] != d["tampered"]["after"]
     d = client.post("/api/ledger/reset").json()
     assert d["verify"]["ok"] and d["rebuilt_matches_published"]
+
+
+# --------------------------------------------------------------------------- #
+# Record book (database audit ledger) endpoints
+# --------------------------------------------------------------------------- #
+
+@pytest.fixture()
+def book_client(tmp_path, monkeypatch):
+    from sqlalchemy import create_engine
+    from mahros.db.models import Base, Hospital
+    from mahros.ledger.store import DbLedger
+    from tests.test_db_ledger import _case
+    eng = create_engine(f"sqlite:///{tmp_path / 'b.sqlite'}", future=True)
+    Base.metadata.create_all(eng)
+    with eng.begin() as c:
+        c.execute(Hospital.__table__.insert(), [
+            {"hospital_pk": h, "name": h, "state": "AZ", "source": "t", "provenance": "observed"}
+            for h in ("A", "B")])
+    book = DbLedger(eng)
+    _case(eng, book)
+    monkeypatch.setattr(server, "DB", eng)
+    monkeypatch.setattr(server, "BOOK", book)
+    monkeypatch.setattr(server, "DB_ERROR", None)
+    server.TAMPER.clear()
+    return TestClient(server.app), eng
+
+
+def test_book_status_and_verify(book_client):
+    c, _ = book_client
+    d = c.get("/api/book").json()
+    assert d["verify"]["ok"] and d["summary"]["entries"] == 3 and len(d["recent"]) == 3
+
+
+def test_book_one_click_tamper_names_the_bid_and_undo_restores(book_client):
+    c, _ = book_client
+    d = c.post("/api/book/tamper").json()
+    assert not d["verify"]["ok"] and d["verify"]["table"] == "bids"
+    assert d["tampered"]["before"] == 14.0 and d["tampered"]["after"] == 39.0
+    assert c.post("/api/book/undo").json()["verify"]["ok"]
+
+
+def test_book_detects_a_hand_edit_like_pgadmin(book_client):
+    from sqlalchemy import update
+    from mahros.db.models import Bid
+    c, eng = book_client
+    with eng.begin() as conn:
+        conn.execute(update(Bid).values(reason="no beds"))
+    v = c.post("/api/book/verify").json()
+    assert not v["ok"] and v["field"] == "reason" and v["now"] == "no beds"

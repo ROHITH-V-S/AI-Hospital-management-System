@@ -63,7 +63,8 @@ def _case(engine, led):
                                   block_id=blk, recorded_at="2023-01-02T10:42:20",
                                   ref=("bids", b.id),
                                   record={"hospital_pk": "B", "answer": "BID",
-                                          "travel_min": 14.0, "ready_min": 10.0}, session=s)
+                                          "travel_min": 14.0, "ready_min": 10.0,
+                                          "reason": "ICU bed free"}, session=s)
     led.append("AWARD", "coordinator", "hospital:B", {"to": "B"}, block_id=blk,
                recorded_at="2023-01-02T10:44:00")
     led.seal_block(blk)
