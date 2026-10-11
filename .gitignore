@@ -15,3 +15,6 @@ data/cache/
 # Results ARE committed: they are small, and committing them lets a reviewer
 # see every number without re-running anything, and lets the dashboard deploy
 # without the data cache.
+
+.env
+data/*.sqlite

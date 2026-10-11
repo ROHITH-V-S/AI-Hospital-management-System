@@ -93,7 +93,28 @@ national average because its hospitals are often full together.
 - Absorption is an **upper estimate**: it ignores specialty, transport and
   patient choice. See [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) §4.
 
-## Run it
+## Start everything (Docker)
+
+```bash
+docker compose up            # first run: builds, loads ~1 million real reports into PostgreSQL
+```
+
+| Open | What |
+|---|---|
+| http://localhost:8080 | the MAHROS dashboard |
+| http://localhost:5050 | pgAdmin: browse every table (no login; server "MAHROS database") |
+
+What starts: `db` (PostgreSQL 16), `loader` (one-shot: downloads the data if
+`data/cache/` is empty, runs the pipeline, fills the database; re-running it
+does nothing if the inputs are unchanged), `app` (the dashboard) and
+`pgadmin`. Passwords: copy `.env.example` to `.env` and change them; without
+a `.env` the local-demo defaults are used. Stop with `docker compose down`
+(add `-v` to delete the database too).
+
+The research experiments still read the Parquet cache, so their results stay
+byte-reproducible; the running platform reads and writes PostgreSQL.
+
+## Run it (without Docker)
 
 ```bash
 pip install -e ".[dev,demo]"

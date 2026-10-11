@@ -22,5 +22,29 @@
     "rows": 964632,
     "file": "hhs_raw_source.parquet",
     "sha256": "cc5cbbea06ae0314d681ffc8788ec42f52e37e8808a9e56eec60ee6ea9b715b6"
+  },
+  "corrected_extra": {
+    "title": "COVID-19 Reported Patient Impact and Hospital Capacity by Facility -- extra fields (ER visits, COVID/flu admissions, paediatric ICU)",
+    "socrata_id": "anag-cw7u",
+    "url": "https://healthdata.gov/d/anag-cw7u",
+    "publisher": "U.S. Department of Health & Human Services",
+    "licence": "U.S. Public Domain",
+    "fetched_at": "2026-10-11T15:01:16+00:00",
+    "source_rows_updated_at": "2024-05-03T01:57:35+00:00",
+    "rows": 1045406,
+    "file": "hhs_corrected_extra_source.parquet",
+    "sha256": "462fa76c2a310db764a25560072abcf6bfdb956370e1b8885962891a9565fab6"
+  },
+  "state_staffing": {
+    "title": "COVID-19 Reported Patient Impact and Hospital Capacity by State Timeseries (RAW)",
+    "socrata_id": "g62h-syeh",
+    "url": "https://healthdata.gov/d/g62h-syeh",
+    "publisher": "U.S. Department of Health & Human Services",
+    "licence": "U.S. Public Domain",
+    "fetched_at": "2026-10-11T15:01:28+00:00",
+    "source_rows_updated_at": "2024-05-03T16:07:15+00:00",
+    "rows": 81713,
+    "file": "hhs_state_staffing_source.parquet",
+    "sha256": "4dda4de3e6ff7e2c175d2f1fa7e06f9eaa30e0768ad41b6d7e500bc5bf45e76e"
   }
 }

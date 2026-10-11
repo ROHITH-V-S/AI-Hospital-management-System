@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "MAHROS database",
+      "Group": "MAHROS",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "mahros",
+      "Username": "mahros",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer",
+      "Comment": "Tables: hospitals, weekly_reports, trust_verdicts, forecasts, surge_alerts, transfer_requests, bids, transfers, staff_pools, equipment_inventory, ledger_entries ..."
+    }
+  }
+}

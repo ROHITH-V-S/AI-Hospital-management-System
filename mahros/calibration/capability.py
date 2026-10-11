@@ -212,3 +212,19 @@ def cath_lab_rooms(row: dict[str, Any]) -> int:
     if rooms > 0:
         return rooms
     return 1 if onsite(row, "CRDC_CTHRTZTN_LAB_SRVC_CD") else 0
+
+
+# --------------------------------------------------------------------------- #
+# v0.3: whole-state capability for the emergency module (Arizona, Massachusetts)
+# --------------------------------------------------------------------------- #
+
+def state_capability_path(state: str) -> Path:
+    return DATA_DIR / f"us_{state.lower()}_capability.json"
+
+
+def load_state_capability(state: str) -> dict[str, Any] | None:
+    """Vendored POS records for every hospital of a state, or None if not built."""
+    path = state_capability_path(state)
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))

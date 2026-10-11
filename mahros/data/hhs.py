@@ -280,3 +280,125 @@ def load(key: str = "corrected") -> pd.DataFrame:
 def duplicate_keys(df: pd.DataFrame) -> pd.DataFrame:
     """Rows sharing a (hospital_pk, week) key. Should be empty; checked, not assumed."""
     return df[df.duplicated(["hospital_pk", "week"], keep=False)]
+
+
+# --------------------------------------------------------------------------- #
+# v0.3 additions: extra facility fields and the state staffing series.
+#
+# Kept in their OWN cache files with their own fingerprints, so the file the
+# RQ1-RQ3 results were built from (hhs_corrected_source.parquet) is untouched
+# and those results stay byte-reproducible.
+# --------------------------------------------------------------------------- #
+
+#: Extra per-hospital weekly fields from the same corrected dataset
+#: (``anag-cw7u``). Short name -> source field. Checked against the live
+#: dataset metadata on 2026-10-11 before use.
+EXTRA_FIELDS = {
+    "ed_visits": "previous_day_total_ed_visits_7_day_sum",
+    "covid_ed_visits": "previous_day_covid_ed_visits_7_day_sum",
+    "covid_adm_adult": "previous_day_admission_adult_covid_confirmed_7_day_sum",
+    "covid_adm_peds": "previous_day_admission_pediatric_covid_confirmed_7_day_sum",
+    "flu_adm": "previous_day_admission_influenza_confirmed_7_day_sum",
+    "flu_used": "total_patients_hospitalized_confirmed_influenza_7_day_avg",
+    "flu_icu": "icu_patients_confirmed_influenza_7_day_avg",
+    "covid_icu": "staffed_icu_adult_patients_confirmed_covid_7_day_avg",
+    "picu_beds": "total_staffed_pediatric_icu_beds_7_day_avg",
+    "picu_used": "staffed_pediatric_icu_bed_occupancy_7_day_avg",
+}
+
+#: State-level daily series (``g62h-syeh``, "COVID-19 Reported Patient Impact
+#: and Hospital Capacity by State Timeseries (RAW)"). Counts of hospitals.
+STATE_STAFFING = Dataset(
+    "state_staffing", "g62h-syeh",
+    "COVID-19 Reported Patient Impact and Hospital Capacity by State Timeseries (RAW)")
+STAFFING_FIELDS = {
+    "shortage_today_yes": "critical_staffing_shortage_today_yes",
+    "shortage_today_no": "critical_staffing_shortage_today_no",
+    "shortage_today_not_reported": "critical_staffing_shortage_today_not_reported",
+    "shortage_week_yes": "critical_staffing_shortage_anticipated_within_week_yes",
+    "shortage_week_no": "critical_staffing_shortage_anticipated_within_week_no",
+    "shortage_week_not_reported": "critical_staffing_shortage_anticipated_within_week_not_reported",
+}
+EXTRA = Dataset("corrected_extra", "anag-cw7u",
+                "COVID-19 Reported Patient Impact and Hospital Capacity by Facility "
+                "-- extra fields (ER visits, COVID/flu admissions, paediatric ICU)")
+
+
+def _fetch_paged(socrata_id: str, fields: list[str], page: int, log, label: str,
+                 order: str = ":id") -> pd.DataFrame:
+    # Each page is kept on disk until the whole download finishes, so a
+    # network failure resumes where it stopped instead of starting over.
+    parts = CACHE / f"_parts_{label}"
+    parts.mkdir(parents=True, exist_ok=True)
+    frames, offset = [], 0
+    while True:
+        part = parts / f"{offset:09d}.parquet"
+        if part.exists():
+            chunk = pd.read_parquet(part)
+        else:
+            query = urllib.parse.urlencode({
+                "$select": ",".join(fields), "$order": order,
+                "$limit": page, "$offset": offset})
+            raw = _get(f"{BASE}/{socrata_id}.csv?{query}", retries=8)
+            chunk = pd.read_csv(io.BytesIO(raw), dtype=str, keep_default_na=False)
+            chunk.to_parquet(part, index=False)
+        frames.append(chunk)
+        log(f"  {label}: {offset + len(chunk):,} rows")
+        if len(chunk) < page:
+            break
+        offset += page
+    df = pd.concat(frames, ignore_index=True)
+    for p in parts.glob("*.parquet"):
+        p.unlink()
+    parts.rmdir()
+    return df
+
+
+def fetch_extra(page: int = 50_000, log=print) -> Path:
+    """Download the extra facility fields (same dataset, same row keys)."""
+    CACHE.mkdir(parents=True, exist_ok=True)
+    fields = ["hospital_pk", "collection_week", *EXTRA_FIELDS.values()]
+    df = _fetch_paged(EXTRA.socrata_id, fields, page, log, EXTRA.key)
+    out = CACHE / "hhs_corrected_extra_source.parquet"
+    df.to_parquet(out, index=False)
+    _record_manifest(EXTRA, out, len(df))
+    return out
+
+
+def fetch_state_staffing(page: int = 50_000, log=print) -> Path:
+    CACHE.mkdir(parents=True, exist_ok=True)
+    fields = ["state", "date", *STAFFING_FIELDS.values()]
+    df = _fetch_paged(STATE_STAFFING.socrata_id, fields, page, log, STATE_STAFFING.key)
+    out = CACHE / "hhs_state_staffing_source.parquet"
+    df.to_parquet(out, index=False)
+    _record_manifest(STATE_STAFFING, out, len(df))
+    return out
+
+
+def load_extra() -> pd.DataFrame:
+    """Extra fields keyed by (hospital_pk, week). -999999 -> missing + flag."""
+    src = CACHE / "hhs_corrected_extra_source.parquet"
+    if not src.exists():
+        raise FileNotFoundError(f"{src} not found. Run:  python experiments/fetch_extra.py")
+    s = pd.read_parquet(src)
+    df = pd.DataFrame({"hospital_pk": s["hospital_pk"],
+                       "week": pd.to_datetime(s["collection_week"].str.slice(0, 10))})
+    for short, field in EXTRA_FIELDS.items():
+        vals = pd.to_numeric(s[field], errors="coerce")
+        sup = vals.eq(SUPPRESSED)
+        df[short] = vals.mask(sup)
+        df[f"{short}_suppressed"] = sup.to_numpy()
+    return df.sort_values(["hospital_pk", "week"], kind="stable").reset_index(drop=True)
+
+
+def load_state_staffing() -> pd.DataFrame:
+    """Daily state series: counts of hospitals reporting a critical staffing shortage."""
+    src = CACHE / "hhs_state_staffing_source.parquet"
+    if not src.exists():
+        raise FileNotFoundError(f"{src} not found. Run:  python experiments/fetch_extra.py")
+    s = pd.read_parquet(src)
+    df = pd.DataFrame({"state": s["state"],
+                       "date": pd.to_datetime(s["date"].str.slice(0, 10))})
+    for short, field in STAFFING_FIELDS.items():
+        df[short] = pd.to_numeric(s[field], errors="coerce")
+    return df.sort_values(["state", "date"]).reset_index(drop=True)

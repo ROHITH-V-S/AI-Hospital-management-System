@@ -22,6 +22,14 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from ..ledger.chain import AuditLedger
 
+try:   # the platform database (PostgreSQL in Docker, SQLite file otherwise)
+    from ..db.session import get_engine
+    from ..ledger.store import DbLedger
+    DB = get_engine()
+    BOOK = DbLedger(DB)
+except ImportError:                                # pragma: no cover
+    DB = BOOK = None
+
 try:   # live mode needs the experiment stack; the hosted evidence pages do not
     from .live import LiveEngine
 except ImportError as _exc:                       # pragma: no cover
@@ -43,11 +51,31 @@ UI = ROOT / "results" / "ui"
 STATIC = Path(__file__).resolve().parent / "static"
 SAFE_NAME = re.compile(r"^[A-Za-z0-9_\-]+\.json$")
 
-LIVE = LiveEngine()
+try:
+    LIVE = LiveEngine(DB, BOOK)
+except TypeError:                                  # stub without database support
+    LIVE = LiveEngine()
+
+
+def _ensure_tables() -> str | None:
+    """Create/upgrade tables if needed (the Docker loader normally did this already)."""
+    if DB is None:
+        return "database libraries not installed"
+    try:
+        from ..db.load import migrate
+        migrate(DB)
+        return None
+    except Exception as exc:                       # shown on the Audit tab, never fatal
+        return f"{exc.__class__.__name__}: {exc}"
+
+
+DB_ERROR: str | None = None
 
 
 @asynccontextmanager
 async def _lifespan(_app):
+    global DB_ERROR
+    DB_ERROR = _ensure_tables()
     LIVE.start_loading()          # ~15 s in a background thread; the page shows progress
     yield
 
@@ -92,7 +120,61 @@ def index():
 
 @app.get("/healthz")
 def healthz():
-    return {"ok": True, "ui_files": UI.exists()}
+    return {"ok": True, "ui_files": UI.exists(),
+            "database": None if DB is None else DB.dialect.name, "database_error": DB_ERROR}
+
+
+# --------------------------------------------------------------------------- #
+# The record book (audit ledger in the database)
+# --------------------------------------------------------------------------- #
+
+TAMPER: dict = {}
+
+
+def _book():
+    if BOOK is None or DB_ERROR:
+        raise HTTPException(503, DB_ERROR or "database not available")
+    return BOOK
+
+
+@app.get("/api/book")
+def book_status(limit: int = 40):
+    b = _book()
+    return JSONResponse({"summary": b.summary(), "verify": b.verify(),
+                         "recent": b.recent(max(1, min(limit, 200))), "blocks": b.blocks(30),
+                         "demo_tamper": TAMPER or None,
+                         "database": DB.dialect.name})
+
+
+@app.post("/api/book/verify")
+def book_verify():
+    return JSONResponse(_book().verify())
+
+
+@app.get("/api/book/block/{block_id}")
+def book_block(block_id: int):
+    return JSONResponse(_book().recent(block_id=block_id))
+
+
+@app.post("/api/book/tamper")
+def book_tamper():
+    """One click = what a person could do by hand in pgAdmin: edit a logged bid."""
+    b = _book()
+    try:
+        TAMPER.clear()
+        TAMPER.update(b.tamper_demo())
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return JSONResponse({"tampered": TAMPER, "verify": b.verify()})
+
+
+@app.post("/api/book/undo")
+def book_undo():
+    b = _book()
+    if TAMPER:
+        b.undo_tamper(TAMPER)
+        TAMPER.clear()
+    return JSONResponse({"verify": b.verify()})
 
 
 @app.get("/ui/{name}")

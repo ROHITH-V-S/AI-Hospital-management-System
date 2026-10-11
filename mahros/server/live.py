@@ -74,12 +74,20 @@ class Session:
 
 
 class LiveEngine:
-    def __init__(self) -> None:
+    def __init__(self, engine=None, book=None) -> None:
+        """``engine``: the platform database. ``book``: its audit ledger (DbLedger).
+
+        Without an engine (unit tests) the research Parquet files are read and
+        nothing is written to a database.
+        """
         self.ready = False
         self.error: str | None = None
         self.loading = False
         self.lock = threading.Lock()
         self.session = Session()
+        self.engine = engine
+        self.book = book
+        self.data_source = None
 
     # ---------------------------------------------------------------- loading
     def start_loading(self) -> None:
@@ -94,12 +102,21 @@ class LiveEngine:
             from ..data import hhs
             from ..pipeline import assessed
 
-            fc_path = hhs.CACHE / "forecasts_h1.parquet"
-            if not fc_path.exists():
-                raise FileNotFoundError(
-                    "forecasts not found -- run python experiments/rq2_forecast.py")
-            df = assessed("corrected")
-            fc = pd.read_parquet(fc_path)
+            from ..db.frames import assessed_frame, forecasts_frame, loaded
+            if self.engine is not None and loaded(self.engine):
+                # The platform's normal path: everything comes from the database.
+                df = assessed_frame(self.engine)
+                fc = forecasts_frame(self.engine)
+                self.data_source = "database"
+            else:
+                fc_path = hhs.CACHE / "forecasts_h1.parquet"
+                if not fc_path.exists():
+                    raise FileNotFoundError(
+                        "the database is empty -- run the loader (docker compose up, or "
+                        "python -m mahros.db.load)")
+                df = assessed("corrected")
+                fc = pd.read_parquet(fc_path)
+                self.data_source = "research files (database not loaded)"
             self.platform = Platform(df, fc)
             # Display only: HHS stores names in capitals.
             self.platform.frame["name"] = self.platform.frame["name"].map(nice_name)
@@ -122,7 +139,8 @@ class LiveEngine:
     # ---------------------------------------------------------------- session
     def status(self) -> dict:
         s = self.session
-        out = {"ready": self.ready, "loading": self.loading, "error": self.error}
+        out = {"ready": self.ready, "loading": self.loading, "error": self.error,
+               "data_source": self.data_source}
         if self.ready:
             out.update({
                 "states": self.states,
@@ -168,6 +186,7 @@ class LiveEngine:
             overrides, injected = self._apply_mistakes(s.state, wk)
             self.platform.ledger = s.ledger
             run = self.platform.run_week(s.state, wk, overrides)
+            run.block["book"] = self._record_week(run)
             counter = self._without_steward(s.state, wk, overrides, injected)
             feed = self._feed(run, injected, counter)
             stages = self._stages(run, injected, counter)
@@ -551,6 +570,40 @@ class LiveEngine:
                               f"with real room"
                               + (f" ({t['share_absorbed']:.0%})." if t["share_absorbed"] is not None else "."))})
         return feed
+
+    # ---------------------------------------------------------------- database
+    def _record_week(self, run) -> dict | None:
+        """Write the week into the database: plan lines + every message in the record book."""
+        if self.engine is None or self.book is None:
+            return None
+        from datetime import date as _date
+        from ..db.models import PatientMove
+        from ..db.session import session_scope
+        blk = self.book.open_block(f"Weekly plan · {STATE_NAMES.get(run.state, run.state)} · "
+                                   f"week of {run.week}")
+        rows, ids = [], []
+        with session_scope(self.engine) as sess:
+            for p in run.proposals:
+                m = PatientMove(state=run.state, week=_date.fromisoformat(run.week),
+                                from_pk=p["from"], to_pk=p["to"],
+                                patients=round(float(p["patients_per_day"]), 2),
+                                km=round(float(p["km"]), 1), reason=p["why"])
+                sess.add(m)
+                sess.flush()
+                ids.append(m.id)
+        led = self.platform.ledger.blocks[-1]
+        k = 0
+        for e in led.entries:
+            r = {"kind": e["kind"], "sender": e["sender"], "receiver": e["receiver"],
+                 "body": e["body"]}
+            if e["kind"] == "PROPOSAL" and k < len(ids):
+                r["ref"] = ("patient_moves", ids[k])
+                r["record"] = {"from_pk": e["body"]["from"], "to_pk": e["body"]["to"],
+                               "patients": e["body"]["patients_per_day"]}
+                k += 1
+            rows.append(r)
+        self.book.append_many(rows, blk)
+        return self.book.seal_block(blk)
 
     # ---------------------------------------------------------------- ledger
     def _ledger_status(self) -> dict:

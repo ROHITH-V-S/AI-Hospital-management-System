@@ -252,3 +252,71 @@ follow, and the state dropdown (postal codes + hospital counts) was unclear.
   left out entirely, which contradicted step 4).
 - Full message feed kept under "For experts".
 - 59 tests pass; UI smoke passes; checked with headless-Chrome screenshots.
+
+---
+
+# v0.3 revision (spec: `docs/NEXT_SESSION_PROMPT.md`)
+
+## 2026-10-11 — Step 12 (Phase 1): Docker + PostgreSQL
+
+**Why.** Team flaw #3: no real database; the live audit log was lost on
+restart.
+
+**Checked before building (live, not assumed).** Dataset metadata for
+`anag-cw7u` lists `previous_day_total_ed_visits_7_day_sum`, COVID ED visits,
+adult/paediatric COVID admissions, flu admissions, flu inpatients/ICU and
+paediatric ICU beds. `g62h-syeh` has the six `critical_staffing_shortage_*`
+columns; note its title is the **RAW** state timeseries. OSRM table API and the
+NBER POS mirror are reachable.
+
+**What.**
+- `experiments/fetch_extra.py` + `hhs.fetch_extra / fetch_state_staffing`:
+  the extra fields go into their **own** cache file
+  (`hhs_corrected_extra_source.parquet`, 1,045,406 rows, 0 duplicate keys —
+  same row count as the main file) and the state series into
+  `hhs_state_staffing_source.parquet` (81,713 rows, 54 jurisdictions,
+  2020-01-01..2024-04-27). The RQ1–3 input file is untouched, so those results
+  stay byte-reproducible. Paged downloads now resume after a network failure
+  (fix: the first attempt died on a DNS error at page 2).
+- `mahros/db/`: SQLAlchemy 2 models for all spec tables (+ `patient_moves`
+  for the weekly plan lines); every row has `source` and `provenance`
+  (observed / derived / estimated / simulated / entered, enforced by a CHECK
+  constraint). Alembic migration `0001`. Bulk COPY on Postgres, `to_sql` on
+  SQLite (`mahros/db/io.py`).
+- `python -m mahros.db.load`: migrate → ensure data → skip if fingerprints
+  unchanged → hospitals (upsert, never deleted: operational rows point at
+  them), weekly_reports (+extra fields), trust_verdicts, forecasts,
+  state_staffing → derived steps. Never touches the ledger, emergency cases or
+  entered equipment.
+- `docker-compose.yml`: db (postgres:16, healthcheck, volume), loader
+  (one-shot), app, pgAdmin (desktop mode, pre-registered server, password file
+  from the env via a compose `config`). Library versions pinned to the ones
+  that produced the committed results (`requirements-docker.txt`).
+- App reads its frames from the database (`mahros/db/frames.py`) and writes
+  every weekly cycle into the database record book with cross-referenced
+  `patient_moves` rows.
+
+**Fixes found by running on real PostgreSQL** (SQLite had silently allowed them):
+- Some HHS `hospital_pk` values are 64-character hashes → key column widened
+  from 20 to 80.
+- pgAdmin refused to start with a `.local` e-mail → `reviewer@example.com`.
+- Port 8000 is used by another project on this machine → the Docker app
+  publishes on **8080** (`APP_PORT` in `.env` changes it).
+- Weekly reports keep name/city/coordinates as written that week: 2 hospitals
+  change name or location over time, and the platform must reproduce the
+  experiments exactly.
+
+**Verified.**
+- Loader on Postgres: 5,172 hospitals, 1,045,406 reports, 160 s; second run:
+  "inputs unchanged — nothing to do".
+- `tests/test_db_equivalence.py`: the agents give **identical** totals,
+  proposals and verdicts from Postgres and from the Parquet files
+  (AZ ×2, MA, TX weeks); also passes on SQLite.
+- Record book survives an app restart (256 lines, still valid).
+- Editing a plan row by hand (psql, same as pgAdmin) is caught and named:
+  "patient-move suggestion #1 … 'patients' now says 11.19, but the record
+  book wrote 1.19 … (line #208)"; undoing it turns verification green.
+- `tests/test_db_ledger.py`: 6 checks × {SQLite, Postgres} pass.
+- Verify on Postgres: `MAHROS_TEST_PG_URL=postgresql+psycopg://mahros:mahros-local@localhost:5432/postgres`
+  and `MAHROS_TEST_DATABASE_URL=postgresql+psycopg://mahros:mahros-local@localhost:5432/mahros`
+  then `python -m pytest`.
