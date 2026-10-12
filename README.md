@@ -181,7 +181,7 @@ mahros/
 experiments/     every result: run_all.py runs them in order
 migrations/      Alembic (0001: full schema)
 tests/           pytest suite + ui_smoke.js
-docs/            REVIEW_GUIDE, METHODS, DATA_PROVENANCE, BUILD_LOG, STATUS
+docs/            REVIEW_GUIDE, METHODS, DATA_PROVENANCE, NOVELTY_AND_PUBLICATION, BUILD_LOG, STATUS
 results/         every result as JSON/CSV; results/ui/ feeds the dashboard
 docker-compose.yml, Dockerfile, .env.example, docker/pgadmin/
 ```
