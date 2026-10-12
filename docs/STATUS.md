@@ -11,19 +11,18 @@ Branch `trust-aware-rebuild`. Nothing pushed.
 | 4 Surge early warning | done | a5c5d9a, 165ef20 |
 | 5 Staff + equipment | done | 692d170 |
 | 6 Command-centre UI | done (checked in Docker) | see git log |
-| 7 Docs, tests, verification | **not started** | |
+| 7 Docs, tests, verification | done (BUILD_LOG Step 19) | see git log |
 
 ## Phase 6
 Done 2026-10-12 — see BUILD_LOG Step 18. Not verified: layouts narrower than 500 px; clicking through pgAdmin's own GUI.
 
-## Phase 7 (all to do)
-- README (Docker quick start already in; update findings with emergency/surge/staff numbers), REVIEW_GUIDE (3-minute demo: Emergency → Early warning → Staff & equipment → pgAdmin tamper; Q&A: why not just phone, where is the multi-agent part, is it real-time, what is simulated), METHODS (sections for emergency, surge, staffing), DATA_PROVENANCE (every new field: ED/COVID/flu fields, OSRM AZ/MA, POS Q3 2022, state staffing, estimated staff, entered equipment, every emergency parameter from `mahros/emergency/params.py`).
-- `experiments/run_all.py`: add fetch_extra, fetch_emergency_network (optional, vendored), emergency_eval, surge_warning, staffing_check, build_ui_data.
-- Script that cross-checks every number in the docs against `results/*.json`.
-- Full `pytest` (currently 96 pass, 10 skip = Postgres-only; run with
-  `MAHROS_TEST_PG_URL=postgresql+psycopg://mahros:mahros-local@localhost:5432/postgres`
-  `MAHROS_TEST_DATABASE_URL=postgresql+psycopg://mahros:mahros-local@localhost:5432/mahros`) + `node tests/ui_smoke.js` (check its exit code — do not pipe into tail).
-- Fix the `alembic` migration if any model changed since 0001 (none so far).
+## Phase 7
+Done 2026-10-12. The v0.3 revision in docs/NEXT_SESSION_PROMPT.md is complete.
+
+## Still open (not part of the spec, worth doing before submission)
+- Systematic literature search (REVIEW_GUIDE §6 says so).
+- Check the dashboard on a real phone (screenshots only verified down to 500 px).
+- Click through pgAdmin's GUI once yourself before the review (the SQL it runs was verified).
 
 ## Headline results so far (all from results/*.json)
 - Emergency (simulation grounded in real data, AZ 71 + MA 58 hospitals, 16 weeks × 10 runs): time to bed MAHROS 13.2 min vs 19.9 phone nearest-first vs 16.5 phone report-informed; slowest 10%: 13.0 vs 37.1 vs 29.0; in-window 95.7% vs 94.4%; bed found 97.6% vs 97.9%; sensitivity range −2.0 to −12.1 min.

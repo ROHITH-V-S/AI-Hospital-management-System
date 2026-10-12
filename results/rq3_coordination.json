@@ -9,6 +9,16 @@
       "sha256": "cc5cbbea06ae0314d681ffc8788ec42f52e37e8808a9e56eec60ee6ea9b715b6",
       "rows": 964632,
       "fetched_at": "2026-10-10T16:44:56+00:00"
+    },
+    "corrected_extra": {
+      "sha256": "462fa76c2a310db764a25560072abcf6bfdb956370e1b8885962891a9565fab6",
+      "rows": 1045406,
+      "fetched_at": "2026-10-11T15:01:16+00:00"
+    },
+    "state_staffing": {
+      "sha256": "4dda4de3e6ff7e2c175d2f1fa7e06f9eaa30e0768ad41b6d7e500bc5bf45e76e",
+      "rows": 81713,
+      "fetched_at": "2026-10-11T15:01:28+00:00"
     }
   },
   "params": {
@@ -3400,5 +3410,5 @@
       }
     }
   },
-  "runtime_s": 980.4
+  "runtime_s": 811.5
 }

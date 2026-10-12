@@ -1,201 +1,217 @@
 # Review guide
 
-Plain language first, then the questions a panel or journal reviewer is most
-likely to ask, each with an honest answer and where the evidence is. If you
-can say these things in your own words, you can defend the project.
+Plain language first, then the demo, the findings, the weak points, and the
+questions a panel or journal reviewer is most likely to ask — each with an
+honest answer and where the evidence is. If you can say these things in your
+own words, you can defend the project.
 
 ---
 
-## 1. The project in four sentences
+## 1. The project in five sentences
 
-> During a surge, some hospitals are overflowing while others nearby have empty
-> beds, and today nobody is checking whether the bed numbers hospitals report
-> are even right. MAHROS is a platform a state health department could run: it
-> checks every hospital's weekly report, predicts next week, and proposes
-> moving patients from too-full hospitals to nearby ones with room. Each
-> hospital agent decides for itself whether to accept, and everything is
-> written to a record nobody can quietly change. We built and tested it on
-> **real federal reports from 4,712 US hospitals (2020–2024)** — nothing is
-> simulated.
+> When a hospital has a patient it cannot treat — no ICU bed, no cath lab —
+> staff today phone other hospitals one by one; in one study of 49 UK
+> hospitals, critically ill patients moved between hospitals waited a median
+> of 22 hours. MAHROS is a working prototype of the service a
+> state health department could run: it asks every capable hospital at once,
+> each hospital's own agent answers from its own beds, nurses and equipment,
+> and the best bed is confirmed in minutes. Every week it also checks which
+> hospital reports can be believed, warns where hospitals are about to fill
+> up, and plans where patients, nurses and equipment should go. Everything is
+> written into a record book in a real database that nobody can quietly
+> change. The weekly parts run on **real federal reports from 4,712 US
+> hospitals (2020–2024)**; the emergency timings are a **simulation grounded
+> in that real data**, and we say so on every screen.
 
 ## 2. Each part, explained simply
 
 | Part | Like... |
 |---|---|
-| **Data Steward agent** | A teacher checking homework. If a kid writes "I have exactly 87 marbles" every day for a month while playing marbles every day, he stopped counting. |
-| **Forecast agent** | A weather forecast, but for hospital beds — with a "probably between" range, not just one number. |
-| **State coordinator agent** | Moving kids from a classroom with 40 kids and 30 chairs to the room next door with empty chairs. |
-| **Hospital agents** | The other teacher can still say "actually, two new kids just arrived — I can only take three." |
-| **Audit ledger** | A notebook written in pen, where each page includes a fingerprint of the page before. Change one word anywhere and every page after it stops matching. |
-| **Planted errors** | Hiding known mistakes in a clean exam to check the marker finds them. |
-| **Train / test split** | You don't grade a student using the exam they practised on. The model learned on 2020–2022 and was tested on 2023–2024. |
+| **Emergency call-for-bids** | Instead of phoning restaurants one by one to find a table for six, you send one message to every restaurant nearby and pick the best "yes". |
+| **Hospital agent** | Each restaurant decides for itself — only it knows how many tables are free and whether the chef is in. |
+| **Data Steward agent** | A teacher checking homework. If a kid writes "exactly 87 marbles" every day for a month, he stopped counting. In an emergency: a restaurant that says "table free" while its own sign says "full" gets a quick phone check. |
+| **Forecaster** | A weather forecast, but for hospital beds — with a "probably between" range. |
+| **Surge early warning** | A smoke alarm for a neighbourhood's hospitals: rings when they are filling up fast. Not a crystal ball for epidemics. |
+| **Regional coordinator** | Moving kids from a classroom with 40 kids and 30 chairs to the room next door — and lending a teacher too. |
+| **Record book (audit ledger)** | A notebook written in pen, where each line carries a fingerprint of the line before. Change one word anywhere and the fingerprints stop matching. |
+| **Train / test split** | You don't grade a student using the exam they practised on. |
 
-## 3. What we found (say it exactly like this)
+## 3. The live demo (3 minutes)
 
-1. **Reports are not always right.** 1.6% of weekly reports cannot be right,
-   and 44% of hospitals sent at least one. The most common problem is a
-   patient count frozen for weeks. Chance explains only about 1% of those
-   (81 expected vs 8,325 seen). Reports we flagged were **11.6 times** more
-   likely to be corrected later by the government itself.
-2. **Next week can be forecast, modestly better than "same as this week".**
-   Average error 4.72 vs 4.89 occupancy points one week ahead; larger gains
-   two weeks ahead (5.21 vs 5.88). The 90% ranges held 89–90% of the time.
-3. **Coordination could have absorbed about half of the overload.** Of all
-   patient-days hospitals spent above 90% full in 2023–2024, about **50%**
-   could have gone to a hospital within 80 km that really had room the
-   following week. With perfect foresight, 66%. In a crowded metro like
-   Houston, only about 13%.
-4. **Checking reports keeps the plan safe when reports go wrong.** We planted
-   mistakes into 2%, 5% and 10% of real reports. A planner that believes every
-   report proposed 73k, 137k and 253k patient-days into hospitals that were
-   actually over the safe level; with the Data Steward it stayed at about 26k
-   each time. The share of the plan that was really possible stayed at 84%
-   with MAHROS and fell to 74%, 67% and 58% without it.
+Before the review: `docker compose up` (wait until http://localhost:8080
+loads; first run takes a few minutes), and open http://localhost:5050
+(pgAdmin) in a second tab.
 
-> 🧒 If one classroom wrongly says "we have 30 empty chairs", a teacher who
-> believes it sends 30 kids into a full room. The checker notices the number
-> looks wrong and sends them somewhere else.
+1. **Emergency (first tab, ~60 s).** "This is Arizona's hospitals in a real
+   busy week (January 2024). The yellow banner says what is real and what is
+   simulated." The patient is already placed at a small hospital (or click any
+   dot). Choose **Cath lab (heart attack)** → **Find a bed** → press
+   **Next step ›** four times, reading the big sentence each time:
+   1. "The request goes to every hospital that can treat this, at the same moment."
+   2. "Each hospital's agent answers by itself, with a reason" — point at a
+      "No — ICU full (26 of 26 beds)".
+   3. "The Data Steward checks each yes against that hospital's own report."
+   4. "The best bed: soonest to definitive care."
+   5. "Compared with phoning one by one" — read the bars. **If phoning would
+      have been as fast, say so:** "Here the nearest hospital had room, so one
+      call was enough. MAHROS helps most when the nearest ones are full."
+2. **Early warning (~30 s).** Opens on a test week with warnings. "These areas
+   were still below 85% full; the model warned they would cross within 2
+   weeks." Tick **Show what really happened** — "3 of 4 came true; this one did
+   not. Across 2023–24, about half of surges came with no warning."
+3. **Staff & equipment (~30 s).** "One weekly plan: patients, nurse loans,
+   equipment. Read the labels: staff numbers are estimates, equipment is
+   entered by the state." Click a nurse-loan line to see it on the map.
+4. **Audit log + pgAdmin (~60 s).** Press **Verify log** (green). Switch to
+   pgAdmin → MAHROS database → Schemas → public → Tables → `bids` → right-click
+   → View/Edit Data → All Rows. Change one `travel_min`, press Save (F6).
+   Back in MAHROS press **Verify log**: it turns red and names the exact bid,
+   the old and new value and the time it was written. Change it back → green.
+   "After a bad outcome nobody can say 'we were never asked' — and nobody can
+   quietly rewrite what was said."
 
-## 4. Say the weak points before you are asked
+Backup if pgAdmin misbehaves: the **Try it: secretly change a bid** button does
+the same edit in the database with one click; **Undo my change** restores it.
 
-- **The forecaster barely matters for the decisions.** Planning with "next
-  week = this week" absorbed 51.4% vs MAHROS's 50.2%. Almost all of the gain
-  comes from coordinating at all. We report this; we did not tune it away.
-- **Removing bad reports did not improve average forecast accuracy** (slightly
-  worse: +0.10 points). Bad reports are rare (1.6%). The trust layer's job is
-  to stop *large* errors from steering decisions — see the planted-error test.
-- **A 4-week average beats our model four weeks ahead.**
-- **Absorption is an upper estimate.** It ignores specialty (an ICU patient
-  cannot use any free bed), ambulance availability and patient choice.
-- **The data ends in April 2024** and is weekly and self-reported.
+## 4. What we found (say it exactly like this)
 
-Volunteering these is what a panel is testing for. None of them is hidden in
-the code or the results.
+1. **Asking everyone at once finds beds faster, mostly for the patients who
+   wait longest.** In the simulation (16 real weeks, Arizona and
+   Massachusetts, 10 runs each): 13.2 minutes on average to a confirmed bed vs
+   19.9 phoning nearest-first and 16.5 phoning first the hospitals whose report
+   shows room. For the slowest 1 in 10 patients: 13.0 vs 37.1 minutes. The
+   gain ranges from 2.0 to 12.1 minutes depending on our assumptions.
+2. **Reports are not always right.** 1.6% of weekly reports cannot be right;
+   44% of hospitals sent at least one. Reports we flagged were **11.6 times**
+   more likely to be corrected later by the government itself.
+3. **Next week can be forecast, modestly better than "same as this week"**
+   (4.72 vs 4.89 occupancy points of error).
+4. **Weekly coordination could have absorbed about half of the overload**
+   (50.2%; perfect foresight 66.5%), and checking reports keeps the plan safe
+   when reports are wrong.
+5. **The surge warning is modest:** F1 0.47 vs 0.40 for the best simple rule;
+   48% of surges warned at least a week ahead.
 
-## 5. Questions you will be asked
+## 5. Say the weak points before you are asked
 
-**"Your first review said your data was simulated. Is any of this simulated?"**
-No. Every hospital, bed count and patient count is an official federal report
-(`data/manifest.json` has the download fingerprint). The only artificial step
-is the planted-error test, which is labelled as such and always scored against
-the real, unmodified reports.
+- **Emergency timings are simulated.** Hospitals, capability, road times and
+  weekly numbers are real; the minute-by-minute beds and the patients are not.
+  There is no public record of real transfers to compare against.
+- **When the nearest hospital has room, phoning is as fast or faster.**
+  MAHROS waits ~3 minutes for answers, then still needs the same
+  doctor-to-doctor call. Its gain is in the slow tail and in staff phone time.
+- **MAHROS found a bed slightly less often** (97.6% vs 97.9%): a phone caller
+  keeps calling while beds free up.
+- **The share reaching care inside the clinical window barely moves**
+  (95.7% vs 94.4%): the windows (2–4 hours) are long compared with the minutes
+  saved. We do not claim lives saved.
+- **The phone-call length comes from one old study** (2003, ~12 min per call);
+  we sweep 5–15 minutes and always report a range.
+- **The surge warning misses about half of surges**, and the
+  "neighbours rising together" rule in our plan turned out weak (F1 0.11).
+- **Staff per hospital is an estimate** that agrees only weakly with real
+  shortage reports and flags far fewer shortages. **Equipment** is an entered
+  inventory: no research claim rests on it.
+- **The weekly forecaster barely changes the decisions**; almost all of RQ3's
+  gain comes from coordinating at all. **The data ends in April 2024.**
+
+## 6. Questions you will be asked
+
+**"Why not just phone the hospitals?"**
+That is today's practice, and it is our baseline — built fairly: the same
+honest hospitals, the same final call, phoning stops at the first yes, and a
+stronger version phones the hospitals whose report shows room first. Phoning
+wins when the nearest hospital has room. It loses when the nearest ones are
+full: the slowest 10% wait 37.1 minutes vs 13.0. It also costs staff time —
+about 20 minutes on the phone per patient vs 10. And the weekly side cannot
+be done by phone at all: checking 4,712 hospitals' reports, forecasting and
+planning across a state.
+
+**"Where is the multi-agent part?"**
+Hospital agents hold private state no one else can read (beds in use, nurses
+on shift, ventilators, cath-lab rooms, their own reserve policy) and decide by
+themselves, with reasons, to bid or decline. The coordinator knows only public
+facts and cannot see inside a hospital; it can only ask. The Data Steward
+checks other agents' claims. They communicate only by messages, sent in
+parallel, and every message is in the record book. A test pins that the
+coordinators never read a hospital's private state (`mahros/emergency/`,
+`tests/test_emergency.py`).
+
+**"Is it real-time?"**
+It is a working prototype of a real-time service, run on a simulated clock.
+The emergency module answers in about half a second per request on a laptop
+and writes everything to PostgreSQL. It is not deployed and connects to no
+real hospital system; live bed data would come from hospitals' own systems.
+
+**"What exactly is simulated?"**
+Only the emergency module's minute-by-minute part: when patients arrive and
+leave each ICU, and when transfer requests happen. Both are calibrated to each
+hospital's real weekly report (simulated ICUs average 100.2% of the reported
+census) and real ED volume. The weekly trust audit, forecasts, plans and surge
+warning use real reports only. Staff numbers are estimated, equipment is
+entered. Every screen labels which is which.
+
+**"Your first review said the data was simulated."**
+The research questions (trust, forecasting, coordination, surge warning) use
+no simulation. The emergency module needs minute-level data that does not
+exist publicly, so it is a simulation grounded in real data and labelled as
+such; its result is reported as a range over every swept assumption.
+
+**"Did the hospitals lie? Does the Steward catch liars?"**
+No and no. Hospitals answer honestly in the model. The Steward catches
+reports that cannot be right (mostly technical: frozen feeds, typos) and asks
+for a phone check when a bid contradicts the hospital's own report. Deliberate
+manipulation is future work.
 
 **"Where is the AI?"**
-Four places: (1) autonomous agents with divided authority — the hospital agent
-can refuse the coordinator; (2) a machine-learned forecaster (gradient-boosted
-trees) with calibrated uncertainty (conformal prediction); (3) a rule-based
-expert system for data trust, every rule explainable; (4) mathematical
-optimisation (linear programming) for the plan. Be honest that the learned
-forecaster adds little to the decisions (Section 4).
+Autonomous agents with divided authority; machine-learned forecasting and surge
+warning (gradient-boosted trees, calibrated uncertainty); a rule-based expert
+system for data trust; mathematical optimisation (linear programming) for
+weekly plans and loans. Be honest that the learned parts add modestly.
 
-**"Why is the 'A' — agents — needed? Isn't this one program?"**
-Because authority is split the way it is in real life. The state coordinator
-can see the whole region but not inside a hospital this week; each hospital
-knows its own situation. A proposal becomes a transfer only when both
-hospitals' real numbers allow it. That local veto is what stops a bad forecast
-from overfilling a hospital — and it is why the evaluation is conservative.
+**"How do you know a RED flag is really an error?"**
+Chance explains ~1% of frozen flags (81 expected vs 8,325 seen); the
+government's own later corrections hit RED reports 11.6× more often; planted
+errors of six kinds are caught 100%; a sample is exported for manual review.
 
-**"How do you know a RED flag is really an error? You have no answer key."**
-Three independent checks, plus a human one: (1) chance explains ~1% of frozen
-flags; (2) the government's own later corrections hit RED reports 11.6× more
-often than GREEN ones; (3) planted errors of six common kinds are caught 100%
-of the time; (4) a random sample of flags is exported for manual review
-(`results/rq1_review_sample.csv`).
+**"Did the models see the test data?"**
+No. Split by week: train 2020–22, calibrate late 2022, test 2023–24, for both
+the forecaster and the surge warning. Tests rewrite future values and check no
+input changes.
 
-**"Isn't 'frozen' sometimes real? Small hospitals don't change much."**
-Yes — which is why the rule ignores hospitals with fewer than 10 patients and
-needs three identical weeks. We measured how often an honest count repeats
-exactly (1.1% per week) and report the expected false alarms (81) next to the
-observed flags (8,325).
+**"Why these numbers — 90%, 85%, 80 km, 3 minutes, 10-minute calls?"**
+Declared assumptions, each moved on its own in a sensitivity table (RQ3 in
+`results/rq3_coordination.json`; emergency in
+`results/emergency_eval.json` → "sensitivity"; surge 80/85/90% sweep). Every
+emergency parameter and its source is listed on Evidence → 4 and in
+`mahros/emergency/params.py`.
 
-**"Did the model see the test data?"**
-No. Train 2020-08..2022-06, calibrate 2022-07..2022-12, test 2023-01..2024-04,
-split by the week being predicted. A test (`tests/test_forecast.py`) rewrites
-every future value and checks that no input changes.
-
-**"Is 50% realistic?"**
-It is an upper estimate of how much overload had real room nearby, checked
-against what hospitals reported the next week. It ignores specialty and
-transport, so real absorption would be lower. It also varies a lot by place:
-Houston, where hospitals tend to be full together, only ~13%.
-
-**"Why 90% / 80 km / 5%?"**
-They are declared assumptions, and each is moved on its own in the
-sensitivity table (`results/rq3_coordination.json`, "sensitivity"). The
-conclusion — coordination absorbs a large share, below the ceiling — holds in
-every setting (26% to 65%).
-
-**"Straight-line distance is unrealistic."**
-We checked it. For 27 Houston hospitals with real driving times, straight-line
-distance and drive time correlate at 0.98; re-planning with a 60-minute drive
-radius gives the same result (13.46% vs 13.48%) with 96% of the same transfers.
+**"Is the database real? What happens if someone edits it?"**
+PostgreSQL 16 in Docker, browsable in pgAdmin. Each record-book line's hash
+covers its content and the previous hash; bids, transfers and plan lines are
+cross-checked against the line that recorded them. Demonstrate it (Section 3).
 
 **"Is this a blockchain?"**
-No, and it does not need to be. It is an append-only hash chain held by the
-coordinating authority, verifiable by anyone with the entries. It proves the
-record was not changed afterwards; it cannot prove a report was true when
-written — that is the Data Steward's job.
+No, and it does not need to be: an append-only hash chain held by the
+coordinating authority, verifiable by anyone with database access.
 
 **"The data is from COVID. Is it still relevant?"**
-The test period is 2023–2024, after the acute pandemic. Since November 2024,
-CMS again requires hospitals to report bed capacity to CDC every week, so the
-same inputs exist today (though only state totals are public).
+The test period is 2023–2024, after the acute pandemic. Since November 2024
+CMS again requires hospitals to report bed capacity weekly (public releases
+are state-level only).
 
-**"Could a hospital game the Data Steward?"**
-A hospital deliberately adding small noise to a frozen number would evade the
-frozen rule. The rules target accidental errors, which is what the evidence
-shows they are. The ledger means any later change to a report is detectable.
-Deliberate manipulation is listed as future work.
-
-**"What is new compared to existing work?"**
-Optimal patient redistribution has been studied (Parker et al. 2020, 2024)
-and so has predict-then-optimise (Bertsimas et al. 2020); both assume the
-reported numbers are right. GAO (2021) and HHS itself say the data needs
-external validation. As far as our search found, this is the first national
-measurement of how often facility-level capacity reports are unreliable,
-validated against the government's own corrections, combined with a
-coordination method that is scored against what hospitals actually reported
-next. (Do a full systematic literature search before submission.)
-
-## 6. The live demo (3 minutes)
-
-Start the server before the review (`python -m mahros.server`) and wait about
-15 seconds. Open http://127.0.0.1:8000. It opens on **Live operations**, set
-to **Arizona** (Arizona really ran a statewide transfer line during COVID-19,
-which is a good real-world hook).
-
-You drive it with one button: **Next step ›**. Each press moves one step; the
-left panel says what is happening in one plain sentence, the map shows it,
-and numbered badges on the map (①②③) match the numbers in the text.
-
-1. **Intro screen.** "This is a state health department's screen. Every dot is
-   a real Arizona hospital; every number is the real report it sent the
-   government." The five agents are listed.
-2. **Before the first step**, scroll to *Try it: add a mistake*. The hospital
-   is already chosen for you — the one where a typo would do the most harm
-   this week. Keep "Digit missing" and press *Add it to next week's report*.
-3. **Press Next step six times**, reading the big sentence each time:
-   1. Hospitals send their numbers (your mistake is shown in red).
-   2. The Data Steward checks them — "Your mistake was caught".
-   3. The forecaster predicts next week (map colour changes to "expected").
-   4. The coordinator suggests moves (dashed orange lines, map zooms in).
-   5. A week later hospitals say yes / partly / no from their real numbers.
-   6. Result: how many patients could move, a worked example, and — in red —
-      how many patients would have been sent to a full hospital if nobody had
-      checked.
-4. **Tamper.** Press *Try to secretly change a past report*: the audit log
-   turns red and names the week that was changed.
-5. **Close.** "This is one week in one state. The Evidence tabs show the same
-   thing measured over 69 weeks and every state."
-
-**What the dropdowns mean:** *State* = which state health department you are;
-*Week* = which real week to start from; *Speed* = only for Auto-play.
-
-If a mistake is *not* caught (try "Beds and patients typed in each other's
-box" on a nearly full hospital), say so: "It looked believable, so it was
-accepted — small mistakes can slip through, and we report that."
+**"What is new?"**
+Optimal patient redistribution (Parker et al.) and predict-then-optimise
+(Bertsimas et al.) assume reported numbers are right. As far as our search
+found, this is the first national measurement of how often facility capacity
+reports are unreliable, validated against the government's own corrections,
+combined with coordination scored against what hospitals reported next, and
+an agent-based call-for-bids for transfers evaluated on real hospital
+networks. (Do a full systematic literature search before submission.)
 
 ## 7. If you get stuck
 
 Say: *"That isn't something we measured."* Then say what you would measure.
-Every number in this project comes from a script; you never need to guess.
+Every number in this project comes from a script; `python
+experiments/check_doc_numbers.py` confirms the numbers in these documents
+match the result files.

@@ -608,3 +608,28 @@ redone by exact edits.
   2024-01-08T10:44:54 (line #588)" → undo → green. pgAdmin answers on :5050
   (the click-through in its GUI was not automated).
 - Tests: 106 passed, 0 skipped (with the Postgres URLs set).
+
+## 2026-10-12 — Step 19 (Phase 7): docs, full reproduction, number check
+
+- **Docs rewritten for v0.3:** README (what it does at each timescale, Docker
+  start, all findings, honest reading, layout), REVIEW_GUIDE (3-minute demo:
+  Emergency → Early warning → Staff & equipment → pgAdmin tamper; weak
+  points; answers to "why not just phone", "where is the multi-agent part",
+  "is it real-time", "what is simulated"), METHODS (sections 7–10: emergency,
+  surge, staff/equipment, platform), DATA_PROVENANCE (every dataset, field and
+  parameter classified observed / derived / estimated / simulated / entered /
+  assumption).
+- **`experiments/check_doc_numbers.py`:** rebuilds 47 headline figures from
+  `results/` and checks them in the 4 documents (111 checks). Shown to fail
+  when a doc number is changed by hand. Now the last step of `run_all.py`.
+- **`run_all.py`** now also runs fetch_extra, emergency_eval, surge_warning,
+  staffing_check and the number check.
+- **New test:** the emergency coordinators never read a hospital agent's
+  private fields (the review guide claims this; it was not tested before).
+- **Full reproduction from the data cache** (`run_all.py`, ~37 min): RQ1, RQ2,
+  RQ3, Houston, surge warning and staffing check **identical** to the
+  committed results apart from runtime fields. Emergency evaluation:
+  identical results; the only difference is the 16th decimal place of the
+  descriptive "state ICU occupancy" of each chosen week (from replacing a
+  deprecated pandas call in Step 14; the weeks chosen are unchanged).
+- Tests: 107 passed with PostgreSQL; UI smoke passes; doc check passes.

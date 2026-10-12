@@ -17,6 +17,8 @@ through messages written to an append-only, hash-chained audit ledger.
 | Data Steward | one | Classifies each report GREEN / AMBER / RED / MISSING with named reasons | Can exclude a report from planning |
 | Forecast agent | one | Predicts next-week occupancy with a 90% interval | Advisory |
 | Regional Coordinator | one per state | Proposes transfers by solving a linear program | Proposes only; cannot compel |
+| Hospital agent (emergency) | one per hospital, AZ and MA | Private live state (beds, nurses, ventilators, cath rooms, reserve policy); bids or declines with a reason | Final say over its own beds |
+| Emergency coordinator | one per state | Call-for-bids to all capable hospitals in reach; ranks bids; one acceptance call (Section 7) | Can only ask |
 
 Weekly cycle (`mahros/agents/platform.py`): REPORT -> VERDICT -> FORECAST ->
 PROPOSAL -> RESPONSE -> OUTCOME, sealed as one ledger block per state-week.
@@ -202,9 +204,114 @@ Straight-line distance and driving time correlate at 0.98 (road / straight
 median 1.20, 90th percentile 1.35); the two plans absorb 13.46% vs 13.48% of
 overload and share 96% of transferred load.
 
-## 7. Reproducibility
+## 7. Emergency transfer (`mahros/emergency/`, `experiments/emergency_eval.py`)
 
-`python experiments/run_all.py` re-runs everything. All randomness is seeded.
-The trust rules, forecaster and planner are deterministic given the data
-fingerprint in `data/manifest.json`. 56 tests (`pytest`) plus a headless
-dashboard check (`node tests/ui_smoke.js`).
+**A simulation grounded in real data.** Real: 71 Arizona and 58 Massachusetts
+hospitals (every Short Term / Critical Access hospital reporting
+2022-12-25..2024-04-21), OSRM free-flow driving times between all pairs,
+CMS Provider of Services capability (Q3 2022; 68 of 71 and 58 of 58 matched
+on CCN), each hospital's reported ICU and paediatric ICU beds and census and
+ED visits for the chosen week, and the state's reported share of hospitals
+with a critical staffing shortage. Simulated: minute-level ICU arrivals and
+discharges, and transfer requests.
+
+**World.** Each ICU starts at its reported census. Own admissions are Poisson
+with offered load solved from the Erlang loss formula so the expected
+*capped* census equals the report; stays are exponential with mean 3.4 days
+(Moitra et al. 2016). Transfer needs arise at each hospital at rate
+(weekly ED visits) × transfer rate (1.0%; anchor: 1.5% of ED encounters end
+in transfer, Kindermann et al. 2015), with a mix of seven needs (ICU,
+ventilator, cath lab, trauma, neurosurgery, paediatric ICU, burns). A need the
+origin can meet itself is treated locally. Short-staffed hospitals are drawn
+with the real state share and lose 15% of ICU nurses (1 nurse : 2 patients,
+California Title 22). When a week's ED visits were not reported (optional
+from 2023-06-11), the hospital's median of its last 8 reports is used.
+
+**Agents.** Hospital agents hold private state and answer call-for-bids,
+awards and phone calls with one rule: decline (with a reason) if the needed
+capability is absent, the unit is full, it is short-staffed, only reserve beds
+remain (1 bed kept back at hospitals with ≥ 10 ICU beds), or no ventilator is
+free; otherwise bid with travel time, readiness and free beds. The Data
+Steward flags a bid when the hospital's own weekly report shows the unit at
+≥ 100% or the report is RED/MISSING; a flagged bid costs one confirmation
+call in the ranking.
+
+**Policies.** MAHROS: broadcast to all capable hospitals reachable within the
+clinical window (else the 10 nearest), wait a 3-minute bid window, rank by
+time to definitive care (5-minute bands), then capability, then free beds,
+make one acceptance call (10 min). Phone nearest-first: call capable
+hospitals in road-time order, 10 min per call, stop at the first yes.
+Phone report-informed: hospitals whose weekly report shows a free bed first.
+A test pins that coordinators never read hospital private state.
+
+**Design.** Per state, the 4 test weeks with the highest reported ICU
+occupancy plus 4 evenly spread (rule fixed in advance); 10 seeds; common random
+numbers; paired differences per (state, week, seed) with 2,000 bootstrap
+resamples. One-at-a-time sensitivity over every swept parameter in
+`mahros/emergency/params.py` (5 seeds) plus a forced 20% short-staffed
+scenario.
+
+**Results.**
+
+| | MAHROS | Phone, nearest | Phone, report-informed |
+|---|---|---|---|
+| Mean time to confirmed bed | 13.2 min | 19.9 min | 16.5 min |
+| Median | 13.0 | 15.2 | 11.7 |
+| Slowest 10% | 13.0 | 37.1 | 29.0 |
+| Inside clinical window | 95.7% | 94.4% | 94.8% |
+| Bed found | 97.6% | 97.9% | 97.9% |
+| Phone calls per patient | 1.00 | 1.99 | 1.66 |
+
+MAHROS minus phone nearest-first: -6.7 min (95% CI -7.2 to -6.2); slowest 10%
+-24.1 (-25.3 to -22.9). MAHROS minus report-informed: -3.3 min (-3.7 to -2.8).
+Sensitivity range of the mean difference: -2.0 to -12.1 min. Calibration (no
+transfers): simulated ICUs average 100.2% of reported census.
+
+## 8. Surge early warning (`mahros/surge/`, `experiments/surge_warning.py`)
+
+Area = a hospital and every hospital within 50 km (4,705 areas). Causal weekly
+signals over trusted reports: area occupancy and its 1/2-week change, ICU
+occupancy, growth and rate of COVID-19 and influenza admissions (withheld
+counts < 4 entered as 2), ED-visit growth, share of hospitals rising ≥ 3
+points. Target: the area reaches 85% at t+1 or t+2. Gradient-boosted
+classifier (same family as RQ2), trained 2020-08..2022-06; alarm thresholds
+for every method chosen on 2022-07..2022-12 for the best F1 on areas below
+85%; tested 2023-01..2024-04. Uncertainty by resampling states.
+
+On test areas below 85% (2.8% of which crossed within 2 weeks): model
+precision 40%, recall 58%, F1 0.47; best simple rule (already near 85%) F1
+0.40; difference +7.1 F1 points (95% CI 6.0 to 8.3). Crossing events (1,692):
+48% warned at least a week ahead. Without ED visits F1 0.47; at an 80% line
+0.53 vs 0.41, at 90% 0.47 vs 0.38.
+
+## 9. Staff and equipment (`mahros/resources/`, `experiments/staffing_check.py`)
+
+Staff pool per hospital-week = nurses its usual staffed beds need (median of
+its previous 12 trusted weeks) at ICU 1:2 and ward 1:5 (Title 22); need = this
+week's census at the same ratios; intensivists 1:14 (Ward et al. 2013),
+ward physicians 1:15 (assumption). Direction check against the real state
+series (share of answering hospitals reporting a critical staffing shortage):
+2020-08..2022-12, median within-state Spearman 0.24 (positive in 35 of 47
+states), pooled 0.19; 2023-01..2024-04, 0.03. Mean share short: real 13.9% vs
+estimated 2.1%. Equipment is a state-entered inventory seeded with labelled
+estimates; loans and moves come from a weighted transportation LP (lenders
+keep their own need + 1; surge-warned hospitals weighted ×1.5).
+
+## 10. Platform
+
+PostgreSQL 16 (Docker) with SQLAlchemy 2 and Alembic; every row carries
+`source` and `provenance`. The platform reads its frames from the database and
+gives results identical to the research Parquet path
+(`tests/test_db_equivalence.py`). The record book (`mahros/ledger/store.py`)
+chains SHA-256 hashes line by line and cross-checks bids, transfers and plan
+lines against the line that recorded them; `verify()` names the first
+problem.
+
+## 11. Reproducibility
+
+`python experiments/run_all.py` re-runs everything, then
+`experiments/check_doc_numbers.py` checks the numbers quoted in the docs
+against `results/`. All randomness is seeded (the emergency simulation uses
+fixed seeds and `zlib.crc32`, not Python's per-run string hash). 106 tests
+(`pytest`, 10 of them need PostgreSQL) plus a headless dashboard check
+(`node tests/ui_smoke.js`).

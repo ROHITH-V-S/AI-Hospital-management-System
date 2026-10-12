@@ -178,3 +178,18 @@ def test_odd_bed_count_does_not_invent_a_staff_shortage():
     a.take("icu", 0, False)
     yes, d = a.decide("icu", 0)
     assert not yes and d["code"] == "full"
+
+
+def test_coordinators_never_read_a_hospitals_private_state():
+    """The coordinator (MAHROS and phone) may only ASK a hospital agent (decide / take /
+    messages); it must never read the agent's private fields directly."""
+    import inspect
+    import re
+    from mahros.emergency import world as W
+    private = re.compile(r"\._(icu|vent|picu|nurses|reserve|cath|short|prm)")
+    coordinator_methods = [m for n, m in inspect.getmembers(W.World, inspect.isfunction)
+                           if n.startswith(("_mahros", "_phone", "_reach", "on_need", "on_hospital"))]
+    assert len(coordinator_methods) >= 7
+    for m in coordinator_methods:
+        src = inspect.getsource(m)
+        assert not private.search(src), f"{m.__name__} reads private hospital state"

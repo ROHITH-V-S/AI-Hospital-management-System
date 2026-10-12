@@ -509,7 +509,7 @@
     "flu_adm_per_100beds": -0.001354946500423652,
     "flu_adm_growth": -0.003908719814022836
   },
-  "runtime_s": 119.1,
+  "runtime_s": 150.6,
   "data": {
     "corrected": {
       "sha256": "96c7fc1c33fa07d8e83c50c904ed90144009858095f745a513c489191e30bab4",
