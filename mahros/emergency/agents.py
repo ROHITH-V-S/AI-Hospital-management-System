@@ -209,6 +209,10 @@ class HospitalAgent:
         missing = [c for c in REQUIRES[need] if not s.caps.get(c, False)]
         if missing:
             return False, {"reason": f"we do not provide {NEED_WORD[missing[0]]}", "code": "capability"}
+        if need == "picu" and self._picu_cap == 0:
+            return False, {"reason": "no staffed children's ICU beds reported this week", "code": "capacity"}
+        if need != "picu" and self._icu_staffed == 0:
+            return False, {"reason": "no staffed ICU beds reported this week", "code": "capacity"}
         if need == "picu":
             free = self._picu_cap - self._picu
             if free <= 0:

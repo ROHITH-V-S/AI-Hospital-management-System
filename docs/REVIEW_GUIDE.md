@@ -40,7 +40,9 @@ own words, you can defend the project.
 
 Before the review: `docker compose up` (wait until http://localhost:8080
 loads; first run takes a few minutes), and open http://localhost:5050
-(pgAdmin) in a second tab.
+(pgAdmin) in a second tab. A fresh install already contains 6 demo emergency
+cases and one weekly plan (simulated, labelled), so the Audit log and the
+pgAdmin `bids` table are never empty.
 
 1. **Emergency (first tab, ~60 s).** "This is Arizona's hospitals in a real
    busy week (January 2024). The yellow banner says what is real and what is
@@ -52,9 +54,12 @@ loads; first run takes a few minutes), and open http://localhost:5050
       "No — ICU full (26 of 26 beds)".
    3. "The Data Steward checks each yes against that hospital's own report."
    4. "The best bed: soonest to definitive care."
-   5. "Compared with phoning one by one" — read the bars. **If phoning would
-      have been as fast, say so:** "Here the nearest hospital had room, so one
-      call was enough. MAHROS helps most when the nearest ones are full."
+   5. "MAHROS vs phoning one hospital at a time" — read the sentence, then the
+      two timelines side by side: MAHROS (ask all, 3 minutes of answers, one
+      confirming call) and phoning (call 1: no, call 2: no, call 3: yes). **If
+      phoning would have been as fast, say so:** "Here the nearest hospital
+      had room, so one call was enough. MAHROS helps most when the nearest
+      ones are full."
 2. **Early warning (~30 s).** Opens on a test week with warnings. "These areas
    were still below 85% full; the model warned they would cross within 2
    weeks." Tick **Show what really happened** — "3 of 4 came true; this one did

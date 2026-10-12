@@ -134,7 +134,7 @@ def week_view(engine, state: str, week: str) -> dict:
     hs = []
     for r in sig.itertuples():
         nx = peak.get(r.hospital_pk)
-        hs.append({"id": r.hospital_pk, "name": r.name, "city": r.city, "lat": r.lat, "lon": r.lon,
+        hs.append({"id": r.hospital_pk, "name": _s(r.name), "city": _s(r.city), "lat": _f(r.lat), "lon": _f(r.lon),
                    "area_occ": _f(r.area_occ), "d2": _f(r.area_occ_d2), "p": _f(r.probability),
                    "n": int(r.n_neighbours), "rising": int(r.rising_neighbours),
                    "next_peak": _f(nx)})
@@ -143,8 +143,8 @@ def week_view(engine, state: str, week: str) -> dict:
     for r in al.itertuples():
         now = occ_now.get(r.hospital_pk)
         alerts.append({
-            "id": r.hospital_pk, "rule": r.rule, "p": _f(r.probability), "name": r.name,
-            "city": r.city, "area": f"{str(r.city).title()} area" if r.city else r.name,
+            "id": r.hospital_pk, "rule": r.rule, "p": _f(r.probability), "name": _s(r.name),
+            "city": _s(r.city), "area": f"{_s(r.city).title()} area" if _s(r.city) else _s(r.name),
             "message": r.message, "area_occ": now,
             # A WARNING is about an area still below the threshold; above it is status.
             "kind": "already" if now is not None and now >= THRESHOLD else "warning",
@@ -157,6 +157,11 @@ def _st(s: str) -> str:
     if not (isinstance(s, str) and len(s) == 2 and s.isalpha()):
         raise ValueError("bad state")
     return s.upper()
+
+
+def _s(v) -> str:
+    """Text or "" -- PostgreSQL COPY returns a blank (NaN) for a missing string."""
+    return v if isinstance(v, str) else ""
 
 
 def _f(v):

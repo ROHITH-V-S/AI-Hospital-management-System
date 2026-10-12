@@ -193,3 +193,10 @@ def test_coordinators_never_read_a_hospitals_private_state():
     for m in coordinator_methods:
         src = inspect.getsource(m)
         assert not private.search(src), f"{m.__name__} reads private hospital state"
+
+
+def test_hospital_with_no_staffed_icu_says_so_plainly():
+    """Found in the seeded record book: 'ICU full (0 of 0 beds in use)'."""
+    a = HospitalAgent(site("A", 0, 0), 0, quiet(), False, None, 0)
+    yes, d = a.decide("icu", 0)
+    assert not yes and d["reason"] == "no staffed ICU beds reported this week"

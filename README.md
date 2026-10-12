@@ -37,7 +37,8 @@ What starts: `db` (PostgreSQL 16), `loader` (one-shot: downloads the data if
 `data/cache/` is empty, runs the pipeline, fills the database; re-running it
 does nothing if the inputs are unchanged; `docker compose run --rm loader
 python -m mahros.db.load --force` reloads), `app` (the dashboard) and
-`pgadmin`. Passwords: copy `.env.example` to `.env` and change them; without a
+`pgadmin`. An empty database also gets a small demo set (6 emergency cases and
+one weekly plan, simulated and labelled; `--no-seed` skips it). Passwords: copy `.env.example` to `.env` and change them; without a
 `.env` the local-demo defaults are used. The app uses port **8080** (change
 `APP_PORT` in `.env`). Stop with `docker compose down` (add `-v` to delete the
 database too).
@@ -153,6 +154,7 @@ python -m mahros.db.load                # fill a local SQLite database (data/mah
 python -m mahros.server                 # dashboard -> http://127.0.0.1:8000
 python -m pytest                        # 106 tests (10 need PostgreSQL, see below)
 node tests/ui_smoke.js                  # dashboard renders every result
+python tests/api_sweep.py               # every API, every state, against the running app
 ```
 
 PostgreSQL tests (with Docker running):

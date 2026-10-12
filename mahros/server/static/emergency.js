@@ -7,7 +7,7 @@ const EM_STEPS = [
   ["2 · Answers", "Each hospital decides"],
   ["3 · Check", "Data Steward checks bids"],
   ["4 · Choose", "Best bed chosen"],
-  ["5 · Compare", "MAHROS vs phone calls"]];
+  ["5 · Compare", "MAHROS vs phoning"]];
 
 async function emApi(path, method = "GET"){
   const r = await fetch("/api/emergency/" + path, {method});
@@ -139,21 +139,34 @@ function emShow(){
     if (r.placed) items.push({tone: r.within_window ? "green" : "miss", text: r.within_window ? `The patient reaches definitive care inside the ${r.window_min.toFixed(0)}-minute window.` : `Outside the ${r.window_min.toFixed(0)}-minute window — the nearest suitable bed is too far or not ready.`});
     map = r.placed ? {lines: [{from: o, to: r.chosen.id, kind: "arrow"}], zoom: [o, r.chosen.id, ...r.ranking.slice(1, 3).map(x => x.id)]} : {};
   } else {
-    const p = r.phone, lo = r.phone_range_min[0], hi = r.phone_range_min[1];
-    title = "Faster than phoning?";
-    const mahros = r.time_to_bed_min;
-    const verdict = (mahros == null) ? "" : (lo == null) ? "Phoning one by one would not have found a bed."
-      : (p["10"] && p["10"].minutes != null && p["10"].minutes <= mahros)
-        ? `Here phoning would have been about as fast: the nearest hospital${p["10"].calls > 1 ? "s" : ""} had room. MAHROS helps most when nearby hospitals are full.`
-        : `Phoning nearest-first needed ${p["10"].calls} calls — ${lo.toFixed(0)} to ${hi.toFixed(0)} minutes depending on call length. MAHROS: ${mahros.toFixed(0)} minutes.`;
-    cap = verdict;
-    nums = [["MAHROS", mahros == null ? "—" : `${mahros.toFixed(0)} min`, "--green"],
-            ["phone calls", lo == null ? "no bed" : (hi > lo ? `${lo.toFixed(0)}–${hi.toFixed(0)} min` : `${lo.toFixed(0)} min`), "--red"]];
-    extra = emCompare(r);
-    items = (p["10"] ? p["10"].call_list : []).map((c, i) => ({tone: c.yes ? "green" : "grey", focus: [c.id], text: `Call ${i + 1}: ${c.name} — ${c.yes ? "yes" : "no: " + c.reason}.`}));
-    if (r.book) items.push({tone: "ledger", text: `Written to the record book as page #${r.book.id} (${r.book.entries} lines, request #${r.book.request_id}). See the Audit log tab.`});
-    map = p["10"] && p["10"].to_id ? {lines: [...(p["10"].call_list || []).map(c => ({from: o, to: c.id, kind: "dash"})), ...(r.placed ? [{from: o, to: r.chosen.id, kind: "arrow"}] : [])],
-                                      zoom: [o, ...(p["10"].call_list || []).map(c => c.id), ...(r.placed ? [r.chosen.id] : [])]} : {};
+    // Step 5: two timelines, in minutes from the request, using 10-minute calls.
+    const p10 = r.phone["10"], lo = r.phone_range_min[0], hi = r.phone_range_min[1];
+    const mins = r.time_to_bed_min, W = r.params.bid_window_min, C = r.params.call_min;
+    const ph = p10 && p10.minutes != null ? p10.minutes : null;
+    title = "MAHROS vs phoning one hospital at a time";
+    cap = mins == null ? "MAHROS found no bed in reach at this moment."
+        : ph == null ? `MAHROS found a bed in ${mins.toFixed(0)} minutes. Phoning one hospital at a time would not have found one.`
+        : ph > mins + 0.5 ? `MAHROS found the bed ${(ph - mins).toFixed(0)} minutes sooner than phoning would have.`
+        : `Here phoning would have been just as fast${ph < mins - 0.5 ? " (or faster)" : ""}: the nearest hospital had room, so the first call was enough. MAHROS helps most when the nearest hospitals are full.`;
+    nums = [["MAHROS", mins == null ? "no bed" : `${mins.toFixed(0)} min`, "--green"],
+            ["phoning", ph == null ? "no bed" : `${ph.toFixed(0)} min`, "--red"]];
+    const clock = m => `${Math.floor(m)} min`;
+    const acc = mins == null ? 0 : Math.max(1, Math.round((mins - W) / C));
+    const mLines = mins == null ? [] : [
+      `<li><b>${clock(0)}</b> — asks all ${r.asked_count} hospitals that can treat this, at the same moment.</li>`,
+      `<li><b>${clock(W)}</b> — answers are in (MAHROS waits ${W} minutes for them).</li>`,
+      `<li><b>${clock(mins)}</b> — ${acc > 1 ? `${acc} doctor-to-doctor calls` : "one doctor-to-doctor call"} (${C} minutes${acc > 1 ? " each" : ""}) confirm${acc > 1 ? "" : "s"} the bed at ${esc(r.chosen.name)}.</li>`];
+    const pLines = p10 ? p10.call_list.map((c, i) => `<li><b>${clock((i + 1) * C)}</b> — call ${i + 1}: ${esc(c.name)} — ${c.yes ? "<b>yes</b>" : "no (" + esc(c.reason) + ")"}.</li>`) : [];
+    extra = `<div class="grid g2" style="margin:4px 0 10px">
+      <div class="card" style="border-left:4px solid ${css('--green')}"><h3>MAHROS — ${mins == null ? "no bed" : mins.toFixed(0) + " minutes"}</h3><ol class="small" style="margin:6px 0 0;padding-left:18px">${mLines.join("")}</ol></div>
+      <div class="card" style="border-left:4px solid ${css('--red')}"><h3>Phoning, nearest first — ${ph == null ? "no bed" : ph.toFixed(0) + " minutes"}</h3><ol class="small" style="margin:6px 0 0;padding-left:18px">${pLines.join("") || "<li>No hospital in reach could take the patient.</li>"}</ol></div>
+    </div>
+    <p class="small muted" style="margin:0 0 8px">Both columns face the same hospitals at the same moment, and both end with a doctor-to-doctor call. We assume a phone call takes ${C} minutes (one study found about 12). ${lo != null && hi != null && hi > lo ? `If calls take 5 to 15 minutes, phoning would take ${lo.toFixed(0)} to ${hi.toFixed(0)} minutes.` : ""}</p>`;
+    items = [];
+    if (r.book) items.push({tone: "ledger", text: `Every message above is in the record book: page #${r.book.id} (${r.book.entries} lines). See the Audit log tab.`});
+    map = p10 && p10.to_id ? {lines: [...(p10.call_list || []).map(c => ({from: o, to: c.id, kind: "dash"})), ...(r.placed ? [{from: o, to: r.chosen.id, kind: "arrow"}] : [])],
+                              zoom: [o, ...(p10.call_list || []).map(c => c.id), ...(r.placed ? [r.chosen.id] : [])]} : {};
+    legendExtra = `<span><i style="background:var(--accent)"></i>MAHROS: the bed chosen</span><span><i style="background:var(--grey)"></i>Phoning: hospitals called</span>`;
   }
   const b = badgeMap(items, []);
   const numsHtml = nums.map(([l, v, t]) => `<div><div class="v" style="color:${css(t || "--ink")}">${esc(v)}</div><div class="l">${esc(l)}</div></div>`).join("");
@@ -170,23 +183,6 @@ function emShow(){
   emLegend();
   if (legendExtra) $("#em-legend").innerHTML = legendExtra + `<span class="muted">· other dots: ICU fullness this week</span>`;
   $("#em-map-title").textContent = `${EM.status.state_name} · ${r.requested_at}` + ((map.zoom || []).length ? " · zoomed in" : "");
-}
-function emCompare(r){
-  // Horizontal bars: MAHROS vs phone at 5 / 10 / 15 minutes per call.
-  const rows = [["MAHROS (ask all at once)", r.time_to_bed_min, css("--green")]];
-  [["5", "Phone, 5-min calls"], ["10", "Phone, 10-min calls"], ["15", "Phone, 15-min calls"]].forEach(([k, l]) => {
-    const p = r.phone[k]; rows.push([l + (p && p.calls ? ` (${p.calls} call${p.calls > 1 ? "s" : ""})` : ""), p && p.minutes != null ? p.minutes : null, css("--red")]);
-  });
-  const max = Math.max(...rows.map(x => x[1] || 0), 1);
-  const W = 560, rh = 30, L = 210, H = rows.length * rh + 8;
-  let s = `<svg viewBox="0 0 ${W} ${H}" class="cmp">`;
-  rows.forEach(([l, v, c], i) => {
-    const y = 4 + i * rh, w = v == null ? 0 : (W - L - 70) * v / max;
-    s += `<text x="${L - 8}" y="${y + 19}" text-anchor="end" style="fill:${css('--ink')};font-size:12.5px">${esc(l)}</text>`;
-    s += `<rect x="${L}" y="${y + 6}" width="${Math.max(w, 2)}" height="18" rx="4" fill="${c}" opacity="${i ? .75 : 1}"/>`;
-    s += `<text x="${L + w + 8}" y="${y + 19}" style="fill:${css('--ink')};font-size:12.5px;font-weight:650">${v == null ? "no bed" : v.toFixed(0) + " min"}</text>`;
-  });
-  return s + "</svg>";
 }
 function emFeed(r){
   $("#em-feed").innerHTML = r.timeline.map(m => {

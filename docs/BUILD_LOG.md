@@ -633,3 +633,29 @@ redone by exact edits.
   descriptive "state ICU occupancy" of each chosen week (from replacing a
   deprecated pandas call in Step 14; the weeks chosen are unchanged).
 - Tests: 107 passed with PostgreSQL; UI smoke passes; doc check passes.
+
+## 2026-10-12 — Step 20: team feedback fixes
+
+**Feedback:** "I don't understand step 5", "add some seed data", "UI problem
+with early warning".
+
+- **Early warning crashed on PostgreSQL** ("Out of range float values are not
+  JSON compliant: nan"): a missing city / coordinate comes back as NaN from
+  COPY. **Correction:** Step 18 said every tab had been checked from Docker;
+  the Early-warning screenshot had been taken but not looked at. Fixed, and
+  `tests/api_sweep.py` now calls every API for all 55 states against the
+  running app (726 calls, no errors, no NaN) so this class of bug cannot hide.
+- **Emergency step 5 rewritten:** one plain sentence ("MAHROS found the bed
+  17 minutes sooner than phoning would have" / "Here phoning would have been
+  just as fast") and two timelines side by side, minute by minute. The
+  5/10/15-minute bar chart is gone; the range is one small note.
+- **Demo seed** (`mahros/db/seed.py`): an empty database gets 6 emergency
+  cases (AZ, MA) and one committed weekly plan, all sealed in the record book,
+  so the Audit log, Data trust and pgAdmin tables are not empty. Only when no
+  cases exist; `--no-seed` skips it. Verified on a throwaway second stack
+  (separate ports and volume): seeded, 197 lines verify, second run does not
+  reseed.
+- **Seen in the seeded book:** "ICU full (0 of 0 beds in use)" for a hospital
+  CMS lists with an ICU but that reported 0 staffed ICU beds → now "no
+  staffed ICU beds reported this week". Same decision (decline), so no result
+  changes. Test added.

@@ -15,7 +15,9 @@ What it does, in order
 
 Never touched by a reload: the audit ledger, emergency cases, plans and the
 equipment inventory a person has entered. Equipment is seeded only when the
-table is empty.
+table is empty. A small demo set (6 emergency cases, 1 weekly plan;
+``mahros/db/seed.py``) is added only when there are no cases yet; skip it with
+``--no-seed``.
 """
 
 from __future__ import annotations
@@ -31,7 +33,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 
 from ..data import hhs
 from .io import truncate, write_frame
@@ -246,6 +248,7 @@ def run(force: bool = False) -> int:
     fp = fingerprint()
     if not force and already_loaded(engine, fp):
         log("inputs unchanged since the last load -- nothing to do")
+        seed(engine)
         return 0
     log("building reports + Data Steward verdicts...")
     df = reports_frame()
@@ -262,8 +265,29 @@ def run(force: bool = False) -> int:
         msg = fn(engine, df)
         log(f"{name}: {msg or 'done'} ({time.perf_counter() - t:.0f}s)")
     record_manifest(engine, fp)
+    seed(engine)
     log(f"finished in {time.perf_counter() - t0:.0f}s")
     return 0
+
+
+def seed(engine) -> None:
+    """Demo cases + one weekly plan, only into an empty database (see mahros/db/seed.py)."""
+    if "--no-seed" in sys.argv:
+        return
+    try:
+        from ..agents import Platform
+        from ..ledger.store import DbLedger
+        from .frames import assessed_frame, forecasts_frame
+        from .seed import seed_demo
+        from .models import TransferRequest
+        with session_scope(engine) as s:
+            if (s.execute(select(func.count()).select_from(TransferRequest)).scalar() or 0) > 0:
+                log("demo seed: cases already present -- nothing seeded")
+                return
+        plat = Platform(assessed_frame(engine, ["AZ"]), forecasts_frame(engine))
+        log("demo seed: " + seed_demo(engine, DbLedger(engine), plat))
+    except Exception as exc:                       # a demo seed must never break the load
+        log(f"demo seed skipped: {exc.__class__.__name__}: {exc}")
 
 
 def _s(v):
@@ -283,6 +307,7 @@ def _f(v):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--force", action="store_true", help="reload even if inputs are unchanged")
+    ap.add_argument("--no-seed", action="store_true", help="do not add the demo cases to an empty database")
     args = ap.parse_args()
     print(f"MAHROS loader -> {database_url().split('@')[-1]}")
     return run(args.force)
